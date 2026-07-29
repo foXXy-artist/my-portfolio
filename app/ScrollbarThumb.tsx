@@ -3,6 +3,15 @@
 import { useScrollProgress } from "./hooks/useScrollProgress";
 
 export default function ScrollbarThumb() {
+  // 🚨 [토이콘 기간 임시 숨김]
+  // 아래 'return null;' 때문에 스크롤바가 화면에 나타나지 않습니다.
+  // ---------------------------------------------------------------------
+  // 💡 [토이콘 끝나고 복구하는 방법]
+  // 토이콘이 끝난 후 아래 'return null;' 딱 한 줄만 지우시거나 
+  // 맨 앞에 '//'를 붙여서 '// return null;' 로 만들어주시면 바로 원복됩니다!
+  // ---------------------------------------------------------------------
+  return null;
+
   const progress = useScrollProgress();
 
   const TRACK_START = 74;   // 스크롤바 이미지 시작 위치(px)
