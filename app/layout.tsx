@@ -47,8 +47,7 @@ export default function RootLayout({
         <CartProvider>
           {/* 
             🚨 [TOYCON 전용 안내 - 중요한 주석]
-            토이콘 행사 종료 후 페어 전용 모드가 끝나면 아래 주석들을 해제(!{/* ... */} 제거하여 
-            기존 헤더, 버거메뉴 및 레이어들을 원상복구 하세요.
+            토이콘 행사 종료 후 페어 전용 모드가 끝나면 아래 주석들을 해제(!{/* ... */}
 
           {/* {/!* <Header /> *!/} */}
           <ScrollFriction />
