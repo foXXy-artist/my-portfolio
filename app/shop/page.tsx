@@ -1,4 +1,5 @@
 "use client";
+
 import { useCart } from "@/contexts/CartContext";
 import InfiniteSlideRow from "@/components/InfiniteSlideRow";
 import { SLIDE_ROWS } from "@/lib/products";
@@ -16,16 +17,31 @@ export default function ShopPage() {
       alignItems:      "center",
       paddingTop:      "65px", 
     }}>
-      {/* ✨ [변경됨] height: 1440 고정을 풀고, 내용물이 늘어나는 만큼 자동으로 길어지게 합니다. */}
-      <div style={{
-        width:      1440,
-        display:    "flex",
-        flexDirection: "column",
-        overflow:   "hidden",
-        flexShrink: 0,
-      }}>
-        {/* ✨ [변경됨] SLIDE_ROWS 배열을 순회하면서 줄 개수만큼 알아서 생성합니다. */}
-        {/* 짝수 줄은 오른쪽(1), 홀수 줄은 왼쪽(-1)으로 흐르도록 인덱스(idx)로 계산합니다. */}
+      
+      {/* ✨ 모바일 반응형 처리를 위한 CSS 스타일 추가 */}
+      {/* InfiniteSlideRow 컴포넌트 내부의 이미지들이 모바일에서 자연스럽게 리사이징 되도록 제어합니다. */}
+      <style>{`
+        .responsive-slide-container {
+          width: 100%;
+          max-width: 1440px;
+          display: flex;
+          flex-direction: column;
+          overflow: hidden;
+          flex-shrink: 0;
+        }
+        
+        /* 📱 모바일 화면 (가로 768px 이하)일 때 이미지 크기 자동 축소 */
+        @media (max-width: 768px) {
+          .responsive-slide-container img {
+            max-width: 65vw !important; /* 화면 너비의 65% 사이즈로 자동 조절 */
+            height: auto !important;
+            object-fit: contain !important;
+          }
+        }
+      `}</style>
+
+      {/* ✨ [변경됨] width: 1440 고정을 풀고 className으로 반응형 스타일을 적용했습니다. */}
+      <div className="responsive-slide-container">
         {SLIDE_ROWS.map((rowProducts, idx) => (
           <InfiniteSlideRow 
             key={idx} 
@@ -35,25 +51,25 @@ export default function ShopPage() {
         ))}
       </div>
 
-      {/* 플로팅 장바구니 버튼 */}
+      {/* 🛒 플로팅 장바구니 버튼 (모바일 화면에 맞게 여백 및 크기 미세 조정) */}
       <button
         onClick={openCart}
         style={{
           position:        "fixed",
-          bottom:          32,
-          right:           32,
-          width:           64,
-          height:          64,
+          bottom:          "24px",  
+          right:           "24px",
+          width:           "56px",  
+          height:          "56px",
           borderRadius:    "50%",
           backgroundColor: "#ffffff",
           color:           "#111111",
           border:          "3px solid #111111",
           cursor:          "pointer",
-          fontSize:        26,
+          fontSize:        "24px",
           display:         "flex",
           alignItems:      "center",
           justifyContent:  "center",
-          boxShadow:       "0 6px 24px rgba(0,0,0,0.4)",
+          boxShadow:       "0 6px 24px rgba(0,0,0,0.3)",
           zIndex:          500,
           transition:      "transform 0.2s",
         }}
@@ -64,12 +80,14 @@ export default function ShopPage() {
         {totalCount > 0 && (
           <span style={{
             position:        "absolute",
-            top:             -4, right: -4,
+            top:             -4, 
+            right:           -4,
             backgroundColor: "#ff3b30",
             color:           "#ffffff",
             borderRadius:    "50%",
-            width:           24, height: 24,
-            fontSize:        12,
+            width:           "24px", 
+            height:          "24px",
+            fontSize:        "12px",
             fontWeight:      800,
             display:         "flex",
             alignItems:      "center",
