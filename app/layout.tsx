@@ -1,6 +1,14 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import Header from "./header";
+import ScrollbarThumb from "./ScrollbarThumb";
+import BurgerMenu from "./BurgerMenu";
+import ScrollFriction from "./ScrollFriction";
+
+// 💡 [추가] 장바구니 상태와 서랍(Drawer) 컴포넌트 불러오기
+import { CartProvider } from "@/contexts/CartContext";
+import CartDrawer from "@/components/CartDrawer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -27,7 +35,113 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col bg-black m-0 p-0">
+        {/* 💡 [추가] 전체 레이어 최상단을 CartProvider로 감싸줍니다 */}
+        <CartProvider>
+          {/* 
+            🚨 [TOYCON 전용 안내 - 중요한 주석]
+            토이콘 행사 종료 후 페어 전용 모드가 끝나면 아래 주석들을 해제(!{/* ... */} 제거하여 
+            기존 헤더, 버거메뉴 및 레이어들을 원상복구 하세요.
+
+          {/* {/!* <Header /> *!/} */}
+          <ScrollFriction />
+
+          {/* 층 1️⃣ [가장 아래] head - sunji 레이어 (zIndex: 920) */}
+          {/* {/!* 
+          <div
+            style={{
+              position: "absolute",
+              top: 0,
+              left: "50%",
+              transform: "translateX(-50%)",
+              width: "1440px",
+              height: "100%",
+              pointerEvents: "none",
+              zIndex: 920,
+            }}
+          >
+            <img
+              src="/images/head - sunji.png"
+              alt=""
+              style={{
+                position: "absolute",
+                top: "97px",
+                left: "1361px",
+                width: "38px",
+                height: "auto",
+                pointerEvents: "auto",
+              }}
+            />
+          </div>
+          *!/} */}
+
+          {/* 층 2️⃣ [중간] 스크롤바 body (zIndex: 927) - 화면 맞춤 반응형 적용됨 */}
+          <ScrollbarThumb />
+
+          {/* 층 3️⃣ burdo head 레이어 (zIndex: 9400) */}
+          {/* {/!* 
+          <div
+            style={{
+              position: "absolute",
+              top: 0,
+              left: "50%",
+              transform: "translateX(-50%)",
+              width: "1440px",
+              height: "100%",
+              pointerEvents: "none",
+              zIndex: 9400,
+            }}
+          >
+            <img
+              src="/images/burdo head.png"
+              alt=""
+              style={{
+                position: "absolute",
+                top: "28px",
+                left: "1331px",
+                width: "92px",
+                height: "auto",
+                pointerEvents: "auto",
+              }}
+            />
+          </div>
+          *!/} */}
+
+          {/* 층 4️⃣ 버거 메뉴 단독 레이어 (zIndex: 9999) */}
+          {/* {/!* 
+          <div
+            style={{
+              position: "absolute",
+              top: 0,
+              left: "50%",
+              transform: "translateX(-50%)",
+              width: "1440px",
+              height: "100%",
+              pointerEvents: "none",
+              zIndex: 9999,
+            }}
+          >
+            <div
+              style={{
+                position: "absolute",
+                top: "16px",
+                left: "1074px",
+                pointerEvents: "auto",
+              }}
+            >
+              <BurgerMenu />
+            </div>
+          </div>
+          *!/} */}
+
+          <main className="relative w-full flex-grow flex flex-col items-center">
+            {children}
+          </main>
+
+          {/* 💡 [추가] 장바구니 클릭 시 우측에서 슬라이드로 열릴 장바구니 서랍 UI */}
+          <CartDrawer />
+        </CartProvider>
+      </body>
     </html>
   );
 }
