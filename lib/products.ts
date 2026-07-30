@@ -88,7 +88,7 @@ export const PRODUCTS: Product[] = [
    ] },
    { id: 13,  name: "Paint!",  price: 74000, image: "/images/paint/real_paint.png",  description: "#13", sizes: ["S", "M", "L"], 
     sizePrices: [
-     { size: "S", price: 74000 },
+     { size: "S", price: 76000 },
      { size: "M", price: 270000 },
      { size: "L", price: 900000 }
    ] },
