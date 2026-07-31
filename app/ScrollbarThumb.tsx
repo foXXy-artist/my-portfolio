@@ -3,33 +3,27 @@
 import { useScrollProgress } from "./hooks/useScrollProgress";
 
 export default function ScrollbarThumb() {
-  // 🚨 [토이콘 기간 임시 숨김]
-  // 아래 'return null;' 때문에 스크롤바가 화면에 나타나지 않습니다.
-  // ---------------------------------------------------------------------
-  // 💡 [토이콘 끝나고 복구하는 방법]
-  // 토이콘이 끝난 후 아래 'return null;' 딱 한 줄만 지우시거나 
-  // 맨 앞에 '//'를 붙여서 '// return null;' 로 만들어주시면 바로 원복됩니다!
-  // ---------------------------------------------------------------------
-  return null;
-
   const progress = useScrollProgress();
 
-  const TRACK_START = 74;   // 스크롤바 이미지 시작 위치(px)
-  const TRACK_END   = 845;  // 스크롤바 이미지 끝 위치(px)
-  const currentTop  = TRACK_START + (TRACK_END - TRACK_START) * progress;
+  // 💡 기존의 고정된 px 대신 화면 너비(vw)에 비례하는 동적 위치 계산식을 문자열로 생성합니다.
+  // TRACK_START (74px)  -> 1440px 기준 약 5.14vw
+  // TRACK_END   (845px) -> 1440px 기준 약 58.68vw
+  const topPosition = `calc(min(5.14vw, 74px) + (min(58.68vw, 845px) - min(5.14vw, 74px)) * ${progress})`;
 
   return (
-    // 💡 핵심: 1440px짜리 투명한 래퍼로 감싸서 화면 중앙에 고정합니다.
-    <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[1440px] h-screen pointer-events-none z-[927]">
+    // 💡 w-[1440px]를 w-full max-w-[1440px]로 변경하여 래퍼가 반응형으로 줄어들게 처리
+    <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-[1440px] h-screen pointer-events-none z-[927]">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src="/images/body.png" 
         alt=""
         style={{
-          position: "absolute", // fixed 대신 absolute로 변경! (이제 1440px 래퍼가 기준이 됨)
-          right: "0px",         // 1440px 박스 안에서의 오른쪽 끝에 붙음
-          width: "131px",       
-          top: `${currentTop}px`,
+          position: "absolute", 
+          right: "0px",         
+          // 💡 스크롤바 이미지 너비(131px)도 래퍼에 비례하여 줄어들게 설정 (131/1440 = 9.1%)
+          width: "min(9.1vw, 131px)",       
+          // 💡 JS에서 px을 꽂아주는 대신 브라우저가 직접 계산하게 CSS calc() 식을 전달
+          top: topPosition,
           transition: "top 0.08s linear",
           pointerEvents: "none",
           zIndex: 926

@@ -6,22 +6,25 @@ interface CanvasItem {
   id: string;
   type: "image" | "video";
   src: string;
-  top: string;
-  left: string;
-  width: string;
-  height?: string;
+  top: number;
+  left: number;
+  width: number;
+  height?: number;
   rotate?: string;
   zIndex?: number;
 }
+
+const CANVAS_WIDTH = 1440;
+const CANVAS_HEIGHT = 989;
 
 const CANVAS_ITEMS: CanvasItem[] = [
   {
     id: "about me",
     type: "image",
     src: "/images/about me.png",
-    top: "80px",
-    left: "30px",
-    width: "1380px",
+    top: 80,
+    left: 30,
+    width: 1380,
     rotate: "0deg",
     zIndex: 2,
   },
@@ -29,9 +32,9 @@ const CANVAS_ITEMS: CanvasItem[] = [
     id: "blur cd",
     type: "image",
     src: "/images/blur cd.png",
-    top: "255px",
-    left: "41px",
-    width: "115px",
+    top: 255,
+    left: 41,
+    width: 115,
     rotate: "-29deg",
     zIndex: 1,
   },
@@ -39,9 +42,9 @@ const CANVAS_ITEMS: CanvasItem[] = [
     id: "computer app",
     type: "image",
     src: "/images/computer app.jpg",
-    top: "657px",
-    left: "1279px",
-    width: "133px",
+    top: 657,
+    left: 1279,
+    width: 133,
     rotate: "15deg",
     zIndex: 1,
   },
@@ -51,34 +54,49 @@ export default function Page() {
   return (
     <main
       style={{
-        // 💡 모니터 전체 배경 (1440px 바깥 영역)도 통일하고 싶다면 아래 색상을 배경 이미지 주조색과 맞추거나 똑같이 backgroundImage를 주셔도 됩니다.
         backgroundColor: "#FFFFFF", 
         width: "100%",
         minHeight: "100vh",
         display: "flex",
         justifyContent: "center",
+        alignItems: "flex-start", // 💡 핵심 수정: 'center'를 'flex-start'로 변경하여 상단(Header 밑)에 밀착시킵니다.
         position: "relative",
       }}
     >
-      {/* 🎨 1440 × 989 고정 배경 캔버스 */}
+      {/* 🎨 반응형 배경 캔버스 */}
       <div
         style={{
           position: "relative",
-          width: "1440px",
-          height: "989px",
+          width: "100%",
+          maxWidth: `${CANVAS_WIDTH}px`, 
+          aspectRatio: `${CANVAS_WIDTH} / ${CANVAS_HEIGHT}`, 
           
-          // 💡 [배경 이미지 설정 추가!]
-          backgroundImage: "url('/images/sky check.jpg')", // 👈 준비하신 배경 이미지 파일명으로 바꿔주세요!
-          backgroundSize: "cover",       // 이미지가 1440x989 영역에 꽉 차도록 비율을 맞춰 늘립니다.
-          backgroundPosition: "center",  // 이미지가 캔버스 정중앙에 오도록 맞춥니다.
-          backgroundRepeat: "no-repeat", // 이미지가 모자라도 바둑판처럼 반복되지 않게 합니다.
+          backgroundImage: "url('/images/sky check.jpg')", 
+          backgroundSize: "cover",       
+          backgroundPosition: "center",  
+          backgroundRepeat: "no-repeat", 
 
           overflow: "hidden",
-          flexShrink: 0,
         }}
       >
-        {CANVAS_ITEMS.map((item) =>
-          item.type === "video" ? (
+        {CANVAS_ITEMS.map((item) => {
+          const topPercent = `${(item.top / CANVAS_HEIGHT) * 100}%`;
+          const leftPercent = `${(item.left / CANVAS_WIDTH) * 100}%`;
+          const widthPercent = `${(item.width / CANVAS_WIDTH) * 100}%`;
+          const heightPercent = item.height ? `${(item.height / CANVAS_HEIGHT) * 100}%` : "auto";
+
+          const commonStyle: React.CSSProperties = {
+            position: "absolute",
+            top: topPercent,
+            left: leftPercent,
+            width: widthPercent,
+            height: heightPercent,
+            transform: item.rotate ? `rotate(${item.rotate})` : undefined,
+            zIndex: item.zIndex ?? 0,
+            display: "block",
+          };
+
+          return item.type === "video" ? (
             <video
               key={item.id}
               src={item.src}
@@ -86,17 +104,7 @@ export default function Page() {
               loop
               muted
               playsInline
-              style={{
-                position: "absolute",
-                top: item.top,
-                left: item.left,
-                width: item.width,
-                height: item.height ?? "auto",
-                transform: item.rotate ? `rotate(${item.rotate})` : undefined,
-                zIndex: item.zIndex ?? 0,
-                display: "block",
-                objectFit: "cover",
-              }}
+              style={{ ...commonStyle, objectFit: "cover" }}
             />
           ) : (
             // eslint-disable-next-line @next/next/no-img-element
@@ -104,19 +112,10 @@ export default function Page() {
               key={item.id}
               src={item.src}
               alt=""
-              style={{
-                position: "absolute",
-                top: item.top,
-                left: item.left,
-                width: item.width,
-                height: item.height ?? "auto",
-                transform: item.rotate ? `rotate(${item.rotate})` : undefined,
-                zIndex: item.zIndex ?? 0,
-                display: "block",
-              }}
+              style={commonStyle}
             />
-          )
-        )}
+          );
+        })}
       </div>
     </main>
   );

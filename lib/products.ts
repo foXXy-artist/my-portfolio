@@ -7,94 +7,94 @@ export const PRODUCTS: Product[] = [
   { 
     id: 1,  
     name: "HeartBreak",  
-    price: 38000, 
+    price: 55000, 
     image: "/images/heartbreak/real heartbreak.png",  
     description: "#1",
     // ✨ 1. 화면에 보여질 사이즈 옵션들
     sizes: ["S", "M", "L"], 
     // ✨ 2. 옵션별 실제 가격 설정 (여기에 없는 사이즈는 기본 price 적용)
     sizePrices: [
-      { size: "S", price: 38000 },
+      { size: "S", price: 55000 },
       { size: "M", price: 129000 },
       { size: "L", price: 390000 }
     ]
   },
-  { id: 2,  name: "Broke",  price: 38000, image: "/images/broke/Broke.png",  description: "#2", sizes: ["S", "M", "L"], 
+  { id: 2,  name: "Broke",  price: 55000, image: "/images/broke/Broke.png",  description: "#2", sizes: ["S", "M", "L"], 
      sizePrices: [
-      { size: "S", price: 38000 },
+      { size: "S", price: 55000 },
       { size: "M", price: 129000 },
       { size: "L", price: 390000 }
     ]
    },
-  { id: 3,  name: "Gloomy day",  price: 38000, image: "/images/gloomy day/gloomy day.png",  description: "#3", sizes: ["S", "M", "L"], 
+  { id: 3,  name: "Gloomy day",  price: 55000, image: "/images/gloomy day/gloomy day.png",  description: "#3", sizes: ["S", "M", "L"], 
     sizePrices: [
-     { size: "S", price: 38000 },
+     { size: "S", price:55000 },
      { size: "M", price: 129000 },
      { size: "L", price: 390000 }
    ] },
-  { id: 4,  name: "NirvXXa",  price: 35000, image: "/images/nirvxxa/real_nirvxxa.png",  description: "#4", sizes: ["S", "M", "L"], 
+  { id: 4,  name: "NirvXXa",  price: 55000, image: "/images/nirvxxa/real_nirvxxa.png",  description: "#4", sizes: ["S", "M", "L"], 
     sizePrices: [
-     { size: "S", price: 35000 },
+     { size: "S", price: 55000 },
      { size: "M", price: 126000 },
      { size: "L", price: 350000 }
    ] },
-  { id: 5,  name: "Baby",  price: 38000, image: "/images/baby/real_baby.png",  description: "#5", sizes: ["S", "M", "L"], 
+  { id: 5,  name: "Baby",  price: 55000, image: "/images/baby/real_baby.png",  description: "#5", sizes: ["S", "M", "L"], 
     sizePrices: [
-     { size: "S", price: 38000 },
+     { size: "S", price: 55000 },
      { size: "M", price: 129000 },
      { size: "L", price: 390000 }
    ] },
-   { id: 6,  name: "Half",  price: 38000, image: "/images/half/real_half.png",  description: "#6", sizes: ["S", "M", "L"], 
+   { id: 6,  name: "Half",  price: 55000, image: "/images/half/real_half.png",  description: "#6", sizes: ["S", "M", "L"], 
     sizePrices: [
-     { size: "S", price: 38000 },
+     { size: "S", price: 55000 },
      { size: "M", price: 132000 },
      { size: "L", price: 420000 }
    ] },
-   { id: 7,  name: "Let me out!",  price: 35000, image: "/images/let me out/real_let me out.png",  description: "#7", sizes: ["S", "M", "L"], 
+   { id: 7,  name: "Let me out!",  price: 55000, image: "/images/let me out/real_let me out.png",  description: "#7", sizes: ["S", "M", "L"], 
     sizePrices: [
-     { size: "S", price: 35000 },
+     { size: "S", price: 55000 },
      { size: "M", price: 126000 },
      { size: "L", price: 350000 }
    ] },
-   { id: 8,  name: "zzzzz",  price: 35000, image: "/images/zzzzz/real_zzzzz.png",  description: "#8", sizes: ["S", "M", "L"], 
+   { id: 8,  name: "zzzzz",  price: 55000, image: "/images/zzzzz/real_zzzzz.png",  description: "#8", sizes: ["S", "M", "L"], 
     sizePrices: [
-     { size: "S", price: 35000 },
+     { size: "S", price: 55000 },
      { size: "M", price: 126000 },
      { size: "L", price: 350000 }
    ] },
-   { id: 9,  name: "Boxbox",  price: 25000, image: "/images/boxbox/real_boxbox.png",  description: "#9", sizes: ["S", "M", "L"], 
+   { id: 9,  name: "Boxbox",  price: 35000, image: "/images/boxbox/real_boxbox.png",  description: "#9", sizes: ["S", "M", "L"], 
     sizePrices: [
-     { size: "S", price: 25000 },
+     { size: "S", price: 35000 },
      { size: "M", price: 115000 },
      { size: "L", price: 260000 }
    ] },
-   { id: 10,  name: "Hey...",  price: 35000, image: "/images/hey/real_hey.png",  description: "#10", sizes: ["S", "M", "L"], 
+   { id: 10,  name: "Hey...",  price: 55000, image: "/images/hey/real_hey.png",  description: "#10", sizes: ["S", "M", "L"], 
     sizePrices: [
-     { size: "S", price: 35000 },
+     { size: "S", price: 55000 },
      { size: "M", price: 126000 },
      { size: "L", price: 350000 }
    ] },
-   { id: 11,  name: "Is this okay...?",  price: 38000, image: "/images/Is this okay/real_Is this okay.png",  description: "#11", sizes: ["S", "M", "L"], 
+   { id: 11,  name: "Is this okay...?",  price: 55000, image: "/images/Is this okay/real_Is this okay.png",  description: "#11", sizes: ["S", "M", "L"], 
     sizePrices: [
-     { size: "S", price: 38000 },
+     { size: "S", price: 55000 },
      { size: "M", price: 129000 },
      { size: "L", price: 390000 }
    ] },
-   { id: 12,  name: "Running",  price: 35000, image: "/images/running/real_running.png",  description: "#12", sizes: ["S", "M", "L"], 
+   { id: 12,  name: "Running",  price: 55000, image: "/images/running/real_running.png",  description: "#12", sizes: ["S", "M", "L"], 
     sizePrices: [
-     { size: "S", price: 35000 },
+     { size: "S", price: 55000 },
      { size: "M", price: 126000 },
      { size: "L", price: 350000 }
    ] },
-   { id: 13,  name: "Paint!",  price: 74000, image: "/images/paint/real_paint.png",  description: "#13", sizes: ["S", "M", "L"], 
+   { id: 13,  name: "Paint!",  price: 110000, image: "/images/paint/real_paint.png",  description: "#13", sizes: ["S", "M", "L"], 
     sizePrices: [
-     { size: "S", price: 76000 },
+     { size: "S", price: 110000 },
      { size: "M", price: 270000 },
      { size: "L", price: 900000 }
    ] },
-   { id: 14,  name: "It's hot...",  price: 38000, image: "/images/Its hot/real_It's hot.png",  description: "#14", sizes: ["S", "M", "L"], 
+   { id: 14,  name: "It's hot...",  price: 55000, image: "/images/Its hot/real_It's hot.png",  description: "#14", sizes: ["S", "M", "L"], 
     sizePrices: [
-     { size: "S", price: 38000 },
+     { size: "S", price: 55000 },
      { size: "M", price: 129000 },
      { size: "L", price: 390000 }
    ] },

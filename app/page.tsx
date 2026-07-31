@@ -7,6 +7,29 @@ import OverlayModal from "./OverlayModal";
 // CoverPage는 WebGL/카메라를 사용하므로 SSR 비활성화
 const CoverPage = dynamic(() => import("./CoverPage"), { ssr: false });
 
+// ── 화면 크기에 맞춰 캔버스 비율을 계산하는 커스텀 훅 (✨반응형 핵심) ──
+function useCanvasScale(defaultWidth = 1440) {
+  const [scale, setScale] = useState(1);
+  
+  useEffect(() => {
+    const handleResize = () => {
+      const currentWidth = window.innerWidth;
+      // 화면 너비가 1440px보다 작으면 그 비율만큼 스케일 다운
+      if (currentWidth < defaultWidth) {
+        setScale(currentWidth / defaultWidth);
+      } else {
+        setScale(1); // PC 화면에서는 원래 크기(1) 유지
+      }
+    };
+    
+    handleResize(); // 처음 렌더링 시 실행
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [defaultWidth]);
+  
+  return scale;
+}
+
 // ── 타입 정의 ─────────────────────────────────────────────────────────
 interface HoverConfig {
   scale?:      number;
@@ -24,7 +47,6 @@ interface OverlayConfig {
   left?:   string;
 }
 
-// ⭐ 캔버스 위에만 따로 띄울 체크 마크용 인터페이스 추가
 interface InlineCheckConfig {
   src:     string;
   width:   number;
@@ -46,9 +68,9 @@ interface CanvasItem {
   clickSound?:       string;
   clickOverlay?:     OverlayConfig;
   isCheckbox?:       boolean;
-  checkedOverlays?:  OverlayConfig[];     // 배경이 어두워지는 모달용
-  uncheckedOverlays?: OverlayConfig[];    // 배경이 어두워지는 모달용
-  inlineCheck?:      InlineCheckConfig;   // 캔버스 박스 안에 찍힐 체크 마크용
+  checkedOverlays?:  OverlayConfig[];
+  uncheckedOverlays?: OverlayConfig[];
+  inlineCheck?:      InlineCheckConfig;
   chromaKey?:        boolean; 
 }
 
@@ -377,50 +399,8 @@ const CANVAS_ITEMS: CanvasItem[] = [
   {
     id: "potan tex",
     type: "image", src: "/images/potan tex.png",
-    top: "2746px", left: "506px", width: "123px",
+    top: "2702px", left: "841px", width: "159px",
     rotate: "10deg", zIndex: 36,
-  },
-  {
-    id: "pixel dog tex",
-    type: "image", src: "/images/pixel dog tex.png",
-    top: "2767px", left: "245px", width: "182px",
-    rotate: "0deg", zIndex: 35,
-  },
-  {
-    id: "waiting fish tex",
-    type: "image", src: "/images/waiting fish tex.png",
-    top: "2933px", left: "54px", width: "313px",
-    rotate: "0deg", zIndex: 35,
-  },
-  {
-    id: "calcul tex",
-    type: "image", src: "/images/calcul tex.jpg",
-    top: "3105px", left: "1077px", width: "149px",
-    rotate: "90deg", zIndex: 35,
-  },
-  {
-    id: "boxbox render tex",
-    type: "image", src: "/images/boxbox render tex.png",
-    top: "3244px", left: "1145px", width: "237px",
-    rotate: "-6deg", zIndex: 36,
-  },
-  {
-    id: "minion tex",
-    type: "image", src: "/images/minion tex.png",
-    top: "2912px", left: "652px", width: "206px",
-    rotate: "14deg", zIndex: 35,
-  },
-  {
-    id: "lego baby tex",
-    type: "image", src: "/images/lego baby tex.png",
-    top: "2853px", left: "736px", width: "217px",
-    rotate: "-14deg", zIndex: 35,
-  },
-  {
-    id: "letter bg",
-    type: "image", src: "/images/letter bg.jpg",
-    top: "2352px", left: "-118px", width: "360px",
-    rotate: "-19deg", zIndex: 3,
   },
   {
     id: "alien doodle",
@@ -821,12 +801,6 @@ const CANVAS_ITEMS: CanvasItem[] = [
     rotate: "9deg", zIndex: 45,
   },
   {
-    id: "light window",
-    type: "image", src: "/images/light window.png",
-    top: "2540px", left: "275px", width: "234px",
-    rotate: "0deg", zIndex: 30,
-  },
-  {
     id: "clock tex",
     type: "image", src: "/images/clock tex.png",
     top: "753px", left: "1355px", width: "107px",
@@ -879,24 +853,6 @@ const CANVAS_ITEMS: CanvasItem[] = [
     type: "image", src: "/images/key tex.png",
     top: "563px", left: "240px", width: "162px",
     rotate: "22deg", zIndex: 50,
-  },
-  {
-    id: "kiwi bird tex",
-    type: "image", src: "/images/kiwi bird tex.png",
-    top: "2705px", left: "926px", width: "184px",
-    rotate: "10deg", zIndex: 35,
-  },
-  {
-    id: "mic bg",
-    type: "image", src: "/images/mic bg.jpg",
-    top: "2603px", left: "110px", width: "725px",
-    rotate: "0deg", zIndex: 2,
-  },
-  {
-    id: "finger dog tex",
-    type: "image", src: "/images/finger dog tex.png",
-    top: "1837px", left: "906px", width: "135px",
-    rotate: "-14deg", zIndex: 35,
   },
   {
     id: "medicine",
@@ -956,6 +912,8 @@ const CANVAS_ITEMS: CanvasItem[] = [
 ];
 
 
+
+
 // ══════════════════════════════════════════════════════════════════════
 // CanvasItemRenderer 컴포넌트
 // ══════════════════════════════════════════════════════════════════════
@@ -1012,15 +970,11 @@ function CanvasItemRenderer({ item, onOverlays, onDoorClick, onFileClick, isChec
       onFileClick({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 });
     }
 
-    // 🔥 [수정] 모달창 팝업과 캔버스 체크가 "동시에" 일어나도록 로직 복구
     if (item.isCheckbox) {
-      const nextChecked = !isChecked; // 클릭 후 바뀔 상태
-      onCheckboxToggle(item.id);      // 캔버스 위 초록색 체크 마크 토글
-      
-      // 모달창 데이터 전달 (OverlayModal 띄우기)
+      const nextChecked = !isChecked;
+      onCheckboxToggle(item.id);
       if (nextChecked && item.checkedOverlays) onOverlays(item.checkedOverlays);
       if (!nextChecked && item.uncheckedOverlays) onOverlays(item.uncheckedOverlays);
-      
     } else if (item.clickOverlay) {
       onOverlays([item.clickOverlay]);
     }
@@ -1060,7 +1014,8 @@ interface FallingIconData {
 
 let globalIconId = 0;
 
-function FallingAppsRenderer({ spawns }: { spawns: { id: number; x: number; y: number }[] }) {
+// ✨ [수정됨] scale prop을 받아 모바일 화면 크기에 맞게 위치를 계산합니다.
+function FallingAppsRenderer({ spawns, scale }: { spawns: { id: number; x: number; y: number }[], scale: number }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const iconsRef = useRef<FallingIconData[]>([]);
 
@@ -1080,8 +1035,9 @@ function FallingAppsRenderer({ spawns }: { spawns: { id: number; x: number; y: n
       iconsRef.current.push({
         id: globalIconId++,
         src: selectedIcons[i],
-        x: latest.x - rect.left,
-        y: latest.y - rect.top,
+        // 스케일된 화면 좌표를 원래 1440px 캔버스 좌표로 역계산합니다.
+        x: (latest.x - rect.left) / scale,
+        y: (latest.y - rect.top) / scale,
         vx: (Math.random() - 0.5) * 22, 
         vy: -(Math.random() * 16 + 12), 
         rotation: Math.random() * 360,
@@ -1089,7 +1045,7 @@ function FallingAppsRenderer({ spawns }: { spawns: { id: number; x: number; y: n
         el: null,
       });
     }
-  }, [spawns]);
+  }, [spawns, scale]);
 
   useEffect(() => {
     let raf: number;
@@ -1132,7 +1088,8 @@ function FallingAppsRenderer({ spawns }: { spawns: { id: number; x: number; y: n
 
         icon.el.style.transform = `translate(${icon.x}px, ${icon.y}px) rotate(${icon.rotation}deg)`;
 
-        if (icon.y < window.innerHeight + 150) {
+        // 스케일을 고려하여 화면 밖으로 나갔는지 판단합니다.
+        if (icon.y < (window.innerHeight / scale) + 150) {
           alive.push(icon);
         } else {
           if (icon.el && icon.el.parentNode) {
@@ -1145,7 +1102,7 @@ function FallingAppsRenderer({ spawns }: { spawns: { id: number; x: number; y: n
     };
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, []);
+  }, [scale]);
 
   return (
     <div 
@@ -1154,7 +1111,9 @@ function FallingAppsRenderer({ spawns }: { spawns: { id: number; x: number; y: n
         position: "fixed", 
         top: 0, 
         left: "50%", 
-        transform: "translateX(-50%)", 
+        // 물리 엔진 컨테이너도 캔버스와 동일하게 스케일링 적용
+        transform: `translateX(-50%) scale(${scale})`, 
+        transformOrigin: "top center",
         width: "1440px", 
         height: "100%", 
         pointerEvents: "none", 
@@ -1175,8 +1134,11 @@ export default function Page() {
   const [showXpModal, setShowXpModal] = useState(false);
   const [coverDone, setCoverDone] = useState(() => globalCoverDone);
   const [appSpawns, setAppSpawns] = useState<{ id: number; x: number; y: number }[]>([]);
-  
   const [checkedStates, setCheckedStates] = useState<Record<string, boolean>>({});
+
+  // ✨ 현재 화면 크기에 따른 스케일 비율 값 불러오기
+  const scale = useCanvasScale(1440);
+  const CANVAS_HEIGHT = 9048;
 
   const handleCoverDone = useCallback(() => {
     globalCoverDone = true; 
@@ -1207,49 +1169,66 @@ export default function Page() {
       backgroundColor: "#000000", width: "100%", minHeight: "100vh",
       display: "flex", justifyContent: "center", position: "relative",
     }}>
-      {/* ── 메인 인터랙션 도화지 캔버스 영역 ───────────────────────────── */}
+      {/* ── ✨ [반응형 핵심 래퍼] 화면 크기에 맞춰 전체 캔버스 높이/너비를 동적으로 잡아줍니다 ── */}
       <div style={{
-        position: "relative", width: "1440px", height: "9048px",
-        backgroundColor: "#000000", overflow: "hidden", flexShrink: 0,
+        position: "relative",
+        width: "100%",
+        maxWidth: "1440px",
+        height: `${CANVAS_HEIGHT * scale}px`, // 스케일 비율만큼 전체 페이지 길이도 자동 축소
+        margin: "0 auto",
+        overflow: "hidden",
+        flexShrink: 0,
       }}>
-        {CANVAS_ITEMS.map((item) => (
-          <CanvasItemRenderer
-            key={item.id}
-            item={item}
-            onOverlays={setActiveOverlays}
-            onDoorClick={() => setShowXpModal(true)}
-            onFileClick={handleFileClick} 
-            isChecked={!!checkedStates[item.id]}
-            onCheckboxToggle={handleCheckboxToggle}
-          />
-        ))}
+        
+        {/* ── 1440px 원본 사이즈 캔버스를 css scale을 통해 스크린 사이즈에 맞게 통째로 축소 ── */}
+        <div style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: "1440px",
+          height: `${CANVAS_HEIGHT}px`,
+          transform: `scale(${scale})`, // 계산된 스케일 비율 적용
+          transformOrigin: "top left",  // 상단 좌측을 기준으로 줄어듦
+        }}>
+          {CANVAS_ITEMS.map((item) => (
+            <CanvasItemRenderer
+              key={item.id}
+              item={item}
+              onOverlays={setActiveOverlays}
+              onDoorClick={() => setShowXpModal(true)}
+              onFileClick={handleFileClick} 
+              isChecked={!!checkedStates[item.id]}
+              onCheckboxToggle={handleCheckboxToggle}
+            />
+          ))}
 
-        {/* ── 캔버스 위에 독립적으로 그려지는 초록색 체크 마크 ── */}
-        {CANVAS_ITEMS.map((item) => {
-          if (item.isCheckbox && checkedStates[item.id] && item.inlineCheck) {
-            return (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                key={`inline-check-${item.id}`}
-                src={item.inlineCheck.src}
-                alt="check"
-                style={{
-                  position: "absolute",
-                  top: item.inlineCheck.top,
-                  left: item.inlineCheck.left,
-                  width: `${item.inlineCheck.width}px`,
-                  zIndex: (item.zIndex || 47) + 1, // 로봇 체크박스보다 항상 위에 배치
-                  pointerEvents: "none"
-                }}
-              />
-            );
-          }
-          return null;
-        })}
+          {/* ── 캔버스 위에 독립적으로 그려지는 초록색 체크 마크 ── */}
+          {CANVAS_ITEMS.map((item) => {
+            if (item.isCheckbox && checkedStates[item.id] && item.inlineCheck) {
+              return (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  key={`inline-check-${item.id}`}
+                  src={item.inlineCheck.src}
+                  alt="check"
+                  style={{
+                    position: "absolute",
+                    top: item.inlineCheck.top,
+                    left: item.inlineCheck.left,
+                    width: `${item.inlineCheck.width}px`,
+                    zIndex: (item.zIndex || 47) + 1,
+                    pointerEvents: "none"
+                  }}
+                />
+              );
+            }
+            return null;
+          })}
+        </div>
       </div>
 
       {/* ── 앱 아이콘 쏟아지기 물리 엔진 렌더러 ───────────────────────── */}
-      <FallingAppsRenderer spawns={appSpawns} />
+      <FallingAppsRenderer spawns={appSpawns} scale={scale} />
 
       {/* ── 팝업 모달창 (배경 어두워짐) ────────────────────────── */}
       {activeOverlays.map((overlay) => (
@@ -1278,6 +1257,7 @@ export default function Page() {
             borderColor: "#FFFFFF #808080 #808080 #FFFFFF",
             boxShadow: "1px 1px 0px 0px #000000",
             width: "360px",
+            maxWidth: "90vw", // 모바일 대응
             padding: "2px"
           }}>
             <div style={{
