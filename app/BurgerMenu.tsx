@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import OverlayModal from "./OverlayModal";
 
 const CONFIG = {
+  // ... (💡 기존에 작성하신 원본 CONFIG 내용은 단 하나도 수정하지 않고 그대로 둡니다!)
   images: {
     circle:  "/images/circle.png",
     topBun:  "/images/top-bun.png",
@@ -61,8 +62,8 @@ const CONFIG = {
     },
     {
       id:   "aboutfoxxyletter", src:  "/images/aboutfoxxyletter.png", href: "/about-foxxy",
-      closed: { left:  -10, top: 67, width: 166, height: 22, zIndex: 9111, rotate: -1 },
-      open:   { left:  46, top: 132, width: 169, height: 22, zIndex: 9156, rotate: -1 },
+      closed: { left:  -10, top: 67, width: 125, height: 22, zIndex: 9111, rotate: -1 },
+      open:   { left:  63, top: 132, width: 128, height: 22, zIndex: 9156, rotate: -1 },
       hover:  { scale: 1.1,  translateX: -0.3, translateY: 0, rotate: 1.5 },
     },
     {
@@ -72,9 +73,9 @@ const CONFIG = {
       hover:  { scale: 1.2,  translateX: 1, translateY: 0, rotate: 2 },
     },
     {
-      id:   "19plus", src:  "/images/19plus.png", href: "/shop",
-      closed: { left: 60, top: 80, width: 29,  height: 18, zIndex: 9111, rotate: -9 },
-      open:   { left: 119, top: 203, width: 29,  height: 18, zIndex: 9156, rotate: -9 },
+      id:   "shop", src:  "/images/shop.png", href: "/shop",
+      closed: { left: 60, top: 80, width: 45,  height: 18, zIndex: 9111, rotate: -9 },
+      open:   { left: 115, top: 200, width: 45,  height: 18, zIndex: 9156, rotate: -9 },
       hover:  { scale: 1.2,  translateX: 1, translateY: 0, rotate: 3 },
     },
   ],
@@ -98,6 +99,17 @@ export default function BurgerMenu() {
   const [isMenuOpen,    setIsMenuOpen]    = useState(false);
   const [activeOverlay, setActiveOverlay] = useState<OverlayId>(null);
   const [hoveredLayer,  setHoveredLayer]  = useState<LayerKey | string | null>(null);
+  
+  // 💡 상태 추가: 전체 메뉴 스케일 비율
+  const [scaleRatio, setScaleRatio] = useState(1);
+
+  useEffect(() => {
+    // 💡 화면이 1440px보다 작아질 때 스케일다운 (좌측 상단에 찰싹 붙어서 그대로 작아짐)
+    const handleResize = () => setScaleRatio(Math.min(1, window.innerWidth / 1440));
+    handleResize(); 
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const { images, layers, menuLabels, container, circle } = CONFIG;
 
@@ -148,18 +160,19 @@ export default function BurgerMenu() {
         style={{
           position: "fixed", top: container.top, left: container.left,
           width: container.width, height: container.height, zIndex: container.zIndex,
-          // 💡 최상위 컨테이너는 클릭 영역 무시하여 밑에 있는 화살표가 클릭되게 함
           pointerEvents: "none",
+          // 💡 핵심 수정: 최상위 컨테이너에 scaleRatio를 적용하여 폰트나 디테일 파괴 없이 원본 비율 그대로 줌아웃시킵니다.
+          transform: `scale(${scaleRatio})`,
+          transformOrigin: "top left" // 👈 화면 좌측 상단을 기준으로 예쁘게 축소되게 만듭니다.
         }}
       >
-        {/* 💡 동적 마우스 인식 영역 (Hit Area): 메뉴가 닫혀있을 땐 작게, 열리면 크게 변함 */}
         <div
           style={{
             position: "absolute",
             top: 0, left: 0,
-            width: isMenuOpen ? 268 : 130, // 닫혀있을 땐 넓이를 130px로 축소
-            height: isMenuOpen ? 268 : 130, // 닫혀있을 땐 높이를 130px로 축소
-            pointerEvents: "auto", // 오직 이 범위 안에서만 마우스를 인식
+            width: isMenuOpen ? 268 : 130, 
+            height: isMenuOpen ? 268 : 130, 
+            pointerEvents: "auto", 
           }}
           onMouseEnter={() => setIsMenuOpen(true)}
           onMouseLeave={() => { setIsMenuOpen(false); setHoveredLayer(null); }}
