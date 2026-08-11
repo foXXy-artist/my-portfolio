@@ -1,12 +1,11 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import OverlayModal from "./OverlayModal";
 
-// 💡 [크기 조절 설정] - 원하는 수치로 직관적으로 수정하세요!
-const MOBILE_SCALE = 1.5;  // 📱 모바일(768px 이하) 크기 (0.85 ~ 1.0 추천)
-const DESKTOP_BASE  = 1440; // 💻 PC 기준 해상도
+const MOBILE_SCALE = 2.12;
+const DESKTOP_BASE  = 1440;
 
 const CONFIG = {
   images: {
@@ -86,12 +85,12 @@ const CONFIG = {
   labelOpenTransition:  "transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)",
   labelCloseTransition: "transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)",
   overlays: {
-    "top-bun": { imageSrc: "/images/bun overlay.png",     imageW: 614, imageH: 332 },
-    "cheese":  { imageSrc: "/images/cheese overlay.png",  imageW: 614, imageH: 332 },
-    "lettuce": { imageSrc: "/images/lettuce overlay.png", imageW: 614, imageH: 332 },
-    "patty":   { imageSrc: "/images/patty overlay.png",   imageW: 614, imageH: 332 },
-    "tomato":  { imageSrc: "/images/tomato overlay.png",  imageW: 614, imageH: 332 },
-    "bot-bun": { imageSrc: "/images/bun overlay2.png",    imageW: 614, imageH: 332 },
+    "top-bun": { imageSrc: "/images/bun overlay.png",     imageW: 553, imageH: 299 },
+    "cheese":  { imageSrc: "/images/cheese overlay.png",  imageW: 553, imageH: 299 },
+    "lettuce": { imageSrc: "/images/lettuce overlay.png", imageW: 553, imageH: 299 },
+    "patty":   { imageSrc: "/images/patty overlay.png",   imageW: 553, imageH: 299 },
+    "tomato":  { imageSrc: "/images/tomato overlay.png",  imageW: 553, imageH: 299 },
+    "bot-bun": { imageSrc: "/images/bun overlay2.png",    imageW: 553, imageH: 299 },
   },
 };
 
@@ -102,31 +101,59 @@ export default function BurgerMenu() {
   const [isMenuOpen,    setIsMenuOpen]    = useState(false);
   const [activeOverlay, setActiveOverlay] = useState<OverlayId>(null);
   const [hoveredLayer,  setHoveredLayer]  = useState<LayerKey | string | null>(null);
-  
-  const [scaleRatio, setScaleRatio] = useState(1);
+  const [scaleRatio,    setScaleRatio]    = useState(1);
+  const [isTouchDevice, setIsTouchDevice] = useState(false);
 
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // 창 크기에 따른 스케일링 및 터치 기기 감지
   useEffect(() => {
     const handleResize = () => {
       const width = window.innerWidth;
-      
-      // 📱 화면 너비가 768px 이하(모바일)일 경우 지정한 MOBILE_SCALE 적용
       if (width <= 768) {
         setScaleRatio(MOBILE_SCALE);
-      } 
-      // 💻 태블릿/작은 PC 화면에서는 해상도 비율대로 자연스럽게 조절
-      else if (width < DESKTOP_BASE) {
+      } else if (width < DESKTOP_BASE) {
         setScaleRatio(width / DESKTOP_BASE);
-      } 
-      // 🖥️ 1440px 이상 대형 화면에서는 원본 100% 유지
-      else {
+      } else {
         setScaleRatio(1);
       }
     };
 
     handleResize(); 
     window.addEventListener("resize", handleResize);
+
+    // 호버 지원 여부 및 터치 기기 감지 (모바일 환경 구분)
+    if (typeof window !== "undefined") {
+      setIsTouchDevice(
+        window.matchMedia("(hover: none)").matches || 
+        "ontouchstart" in window || 
+        navigator.maxTouchPoints > 0
+      );
+    }
+
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+  // 모바일 환경에서 햄버거 메뉴 바깥 영역 클릭(터치) 시 메뉴 닫기
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent | TouchEvent) => {
+      // 오버레이 모달이 열려있을 땐 메뉴를 닫지 않음
+      if (activeOverlay) return; 
+
+      if (isMenuOpen && menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setIsMenuOpen(false);
+        setHoveredLayer(null);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+    };
+  }, [isMenuOpen, activeOverlay]);
 
   const { images, layers, menuLabels, container, circle } = CONFIG;
 
@@ -171,6 +198,17 @@ export default function BurgerMenu() {
     };
   }
 
+  // 레이어 클릭 시 처리 로직
+  const handleLayerClick = (e: React.MouseEvent, overlayId: OverlayId) => {
+    // 햄버거 메뉴가 닫혀있다면, 레이어 개별 클릭(오버레이 띄우기)을 막고 상위 컨테이너로 클릭 이벤트를 넘겨 메뉴를 엽니다.
+    if (!isMenuOpen) {
+      return; 
+    }
+    // 메뉴가 열려있을 때만 이벤트를 가로채 오버레이를 엽니다.
+    e.stopPropagation();
+    setActiveOverlay(overlayId);
+  };
+
   return (
     <>
       <div
@@ -183,6 +221,7 @@ export default function BurgerMenu() {
         }}
       >
         <div
+          ref={menuRef}
           style={{
             position: "absolute",
             top: 0, left: 0,
@@ -190,9 +229,9 @@ export default function BurgerMenu() {
             height: isMenuOpen ? 268 : 130, 
             pointerEvents: "auto", 
           }}
-          onMouseEnter={() => setIsMenuOpen(true)}
-          onMouseLeave={() => { setIsMenuOpen(false); setHoveredLayer(null); }}
-          // 💡 터치 기기(모바일)에서도 터치로 열고 닫을 수 있도록 클릭 이벤트 지원
+          // 터치 기기일 경우 호버 이벤트를 무시하여 원치 않는 작동 방지
+          onMouseEnter={!isTouchDevice ? () => setIsMenuOpen(true) : undefined}
+          onMouseLeave={!isTouchDevice ? () => { setIsMenuOpen(false); setHoveredLayer(null); } : undefined}
           onClick={() => setIsMenuOpen((prev) => !prev)}
         >
           <img src={images.circle} alt="" style={circleStyle} />
@@ -200,9 +239,9 @@ export default function BurgerMenu() {
           {menuLabels.map((label) => (
             <Link
               key={label.id} href={label.href} style={labelStyle(label)}
-              onMouseEnter={() => setHoveredLayer(label.id)}
-              onMouseLeave={() => setHoveredLayer(null)}
-              onClick={(e) => e.stopPropagation()} // 링크 클릭 시 메뉴 닫힘 방지
+              onMouseEnter={!isTouchDevice ? () => setHoveredLayer(label.id) : undefined}
+              onMouseLeave={!isTouchDevice ? () => setHoveredLayer(null) : undefined}
+              onClick={(e) => e.stopPropagation()}
             >
               {label.src ? (
                 <img src={label.src} alt={label.id} style={{ width: "100%", height: "100%", objectFit: "contain" }} />
@@ -215,17 +254,29 @@ export default function BurgerMenu() {
           ))}
 
           <img src={images.topBun} alt="" style={layerStyle("topBun")}
-            onMouseEnter={() => setHoveredLayer("topBun")} onMouseLeave={() => setHoveredLayer(null)} onClick={() => setActiveOverlay("top-bun")} />
+            onMouseEnter={!isTouchDevice ? () => setHoveredLayer("topBun") : undefined} 
+            onMouseLeave={!isTouchDevice ? () => setHoveredLayer(null) : undefined} 
+            onClick={(e) => handleLayerClick(e, "top-bun")} />
           <img src={images.cheese} alt="" style={layerStyle("cheese")}
-            onMouseEnter={() => setHoveredLayer("cheese")} onMouseLeave={() => setHoveredLayer(null)} onClick={() => setActiveOverlay("cheese")} />
+            onMouseEnter={!isTouchDevice ? () => setHoveredLayer("cheese") : undefined} 
+            onMouseLeave={!isTouchDevice ? () => setHoveredLayer(null) : undefined} 
+            onClick={(e) => handleLayerClick(e, "cheese")} />
           <img src={images.lettuce} alt="" style={layerStyle("lettuce")}
-            onMouseEnter={() => setHoveredLayer("lettuce")} onMouseLeave={() => setHoveredLayer(null)} onClick={() => setActiveOverlay("lettuce")} />
+            onMouseEnter={!isTouchDevice ? () => setHoveredLayer("lettuce") : undefined} 
+            onMouseLeave={!isTouchDevice ? () => setHoveredLayer(null) : undefined} 
+            onClick={(e) => handleLayerClick(e, "lettuce")} />
           <img src={images.patty} alt="" style={layerStyle("patty")}
-            onMouseEnter={() => setHoveredLayer("patty")} onMouseLeave={() => setHoveredLayer(null)} onClick={() => setActiveOverlay("patty")} />
+            onMouseEnter={!isTouchDevice ? () => setHoveredLayer("patty") : undefined} 
+            onMouseLeave={!isTouchDevice ? () => setHoveredLayer(null) : undefined} 
+            onClick={(e) => handleLayerClick(e, "patty")} />
           <img src={images.tomato} alt="" style={layerStyle("tomato")}
-            onMouseEnter={() => setHoveredLayer("tomato")} onMouseLeave={() => setHoveredLayer(null)} onClick={() => setActiveOverlay("tomato")} />
+            onMouseEnter={!isTouchDevice ? () => setHoveredLayer("tomato") : undefined} 
+            onMouseLeave={!isTouchDevice ? () => setHoveredLayer(null) : undefined} 
+            onClick={(e) => handleLayerClick(e, "tomato")} />
           <img src={images.botBun} alt="" style={layerStyle("botBun")}
-            onMouseEnter={() => setHoveredLayer("botBun")} onMouseLeave={() => setHoveredLayer(null)} onClick={() => setActiveOverlay("bot-bun")} />
+            onMouseEnter={!isTouchDevice ? () => setHoveredLayer("botBun") : undefined} 
+            onMouseLeave={!isTouchDevice ? () => setHoveredLayer(null) : undefined} 
+            onClick={(e) => handleLayerClick(e, "bot-bun")} />
         </div>
       </div>
 

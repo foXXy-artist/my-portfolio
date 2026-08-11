@@ -136,13 +136,10 @@ export default function HandVisualizer({ videoRef, landmarks, detected, fistLeve
 
   return (
     // 🌟 [최상위 래퍼: 전체 화면(Viewport) 기준 Fixed] 
-    // 브라우저 우측 하단 20px, 80px 위치에 264x198 크기로 고정됩니다.
-    // 이 HandVisualizer 컴포넌트가 렌더링될 때만 존재하므로 카메라와 수명을 같이 합니다.
     <div style={{ position: "fixed", bottom: 80, right: 20, zIndex: 17000, width: W, height: H, pointerEvents: "none" }}>
       
       {/* ══════════════════════════════════════════════════════════════════════
           🎨 [카메라 테두리(프레임) 이미지] 
-          최상위 래퍼와 똑같이 absolute로 움직이므로 완벽하게 겹칩니다!
           ══════════════════════════════════════════════════════════════════════ */}
       <img 
         src="/images/camera box tex.png" 
@@ -199,7 +196,6 @@ export default function HandVisualizer({ videoRef, landmarks, detected, fistLeve
       />
 
       {/* 🎥 [실제 카메라 화면 영역] */}
-      {/* 프레임 밑에 깔리면서, 모서리는 둥글게 잘리고(overflow:hidden) 영상이 나옵니다. */}
       <div style={{ position: "absolute", inset: 0, borderRadius: 8 * BASE_SCALE, overflow: "hidden", boxShadow: "0 0 14px rgba(0,0,0,0.6)", pointerEvents: "auto" }}>
         
         {/* 마스크 영상 원본 (숨김) */}
@@ -230,7 +226,6 @@ export default function HandVisualizer({ videoRef, landmarks, detected, fistLeve
           <div style={{ height: "100%", width: `${fistLevel * 100}%`, background: `hsl(${120 - fistLevel * 120},80%,55%)` }} />
         </div>
       </div>
-
     </div>
   );
 }

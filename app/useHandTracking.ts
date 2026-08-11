@@ -50,16 +50,13 @@ function calcFistLevel(lm: HandLandmark[]): number {
   for (const [tip, pip] of FINGER_JOINTS) {
     const tipDist = dist(lm[tip], lm[WRIST]);
     const pipDist = dist(lm[pip], lm[WRIST]);
-    // 💡 [수정됨] 0.85 -> 0.95: 손가락을 살짝만 구부려도 인식되게 예민도 대폭 향상
     if (tipDist < pipDist * 0.95) curledCount += 1;
   }
 
   const palm = getPalmCenter(lm);
   const thumbTipDist = dist(lm[THUMB[0]], palm) / handSize;
-  // 💡 [수정됨] 0.6 -> 0.8: 엄지손가락도 덜 구부려도 인식되게 넓힘
   if (thumbTipDist < 0.8) curledCount += 0.5;
 
-  // 💡 [수정됨] 3.5 -> 3.0: 손가락 3개만 구부려도 주먹(1.0)으로 가득 차게 인식
   return Math.min(1, curledCount / 3.0);
 }
 
@@ -69,7 +66,6 @@ export function useHandTracking(): UseHandTrackingReturn {
   const handLandmarker = useRef<unknown>(null);
   
   const lastPalmRef    = useRef({ x: 0, y: 0, t: 0 });
-  // 💡 [추가됨] 튀는 노이즈를 막고 정확한 던지기 방향을 잡기 위한 이전 속도 저장소
   const lastVelRef     = useRef({ x: 0, y: 0 }); 
 
   const [handState, setHandState] = useState<HandState>({
@@ -124,7 +120,6 @@ export function useHandTracking(): UseHandTrackingReturn {
       const rawVx = (palmX - lastPalmRef.current.x) / dt;
       const rawVy = (palmY - lastPalmRef.current.y) / dt;
       
-      // 💡 [수정됨] 직전 속도(60%)와 현재 속도(40%)를 섞어서 손 이동 방향이 갑자기 튀지 않고 스무스하게 날아가게 보정
       const vx = lastVelRef.current.x * 0.6 + rawVx * 0.4;
       const vy = lastVelRef.current.y * 0.6 + rawVy * 0.4;
       lastVelRef.current = { x: vx, y: vy };
@@ -138,7 +133,6 @@ export function useHandTracking(): UseHandTrackingReturn {
   }, []);
 
   const startCamera = useCallback(async () => {
-    // 기존 카메라 로직 동일...
     setCameraStatus("requesting");
     try {
       if (!navigator.mediaDevices?.getUserMedia) { setCameraStatus("unavailable"); return; }

@@ -54,7 +54,6 @@ export default function PaperMesh({ handState, phase, throwVel }: Props) {
     if (!meshRef.current) return;
 
     if (phase === "thrown") {
-      // 💡 [수정됨] 위에서 설정한 FLY_SPEED와 ROTATION_SPEED가 적용되어 매우 빠르게 날아갑니다.
       meshRef.current.position.x += throwVel.x * delta * FLY_SPEED_X;
       meshRef.current.position.y += throwVel.y * delta * FLY_SPEED_Y;
       meshRef.current.rotation.z -= throwVel.x * delta * ROTATION_SPEED; 

@@ -14,15 +14,14 @@ function useCanvasScale(defaultWidth = 1440) {
   useEffect(() => {
     const handleResize = () => {
       const currentWidth = window.innerWidth;
-      // 화면 너비가 1440px보다 작으면 그 비율만큼 스케일 다운
       if (currentWidth < defaultWidth) {
         setScale(currentWidth / defaultWidth);
       } else {
-        setScale(1); // PC 화면에서는 원래 크기(1) 유지
+        setScale(1); 
       }
     };
     
-    handleResize(); // 처음 렌더링 시 실행
+    handleResize(); 
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, [defaultWidth]);
@@ -818,7 +817,6 @@ const CANVAS_ITEMS: CanvasItem[] = [
     hover: { scale: 1.1 },
     isCheckbox: true,
     
-    // 1️⃣ 기존에 작동하던 "배경이 어두워지는 오버레이 모달창" (복구 완료)
     checkedOverlays: [
       { id: "robot-success-1", src: "/images/u r not robot.png", width: 758, height: 246, top: "351px", left: "550px" },
     ],
@@ -826,12 +824,11 @@ const CANVAS_ITEMS: CanvasItem[] = [
       { id: "robot-fail-1", src: "/images/really.png", width: 758, height: 246, top: "351px", left: "550px" },
     ],
     
-    // 2️⃣ "캔버스 위 체크박스 네모 칸 안"에만 쏙 들어가는 초록색 체크 마크 (새로 분리)
     inlineCheck: {
       src: "/images/check.png",
       width: 55,       
-      top: "304px",    // 👈 네모 칸 안에 안 맞으면 이 수치를 위아래로 조절하세요.
-      left: "46px",    // 👈 네모 칸 안에 안 맞으면 이 수치를 좌우로 조절하세요.
+      top: "304px",    
+      left: "46px",    
     }
   },
   {
@@ -910,8 +907,6 @@ const CANVAS_ITEMS: CanvasItem[] = [
     rotate: "4deg", zIndex: 59,
   },
 ];
-
-
 
 
 // ══════════════════════════════════════════════════════════════════════
@@ -1014,7 +1009,6 @@ interface FallingIconData {
 
 let globalIconId = 0;
 
-// ✨ [수정됨] scale prop을 받아 모바일 화면 크기에 맞게 위치를 계산합니다.
 function FallingAppsRenderer({ spawns, scale }: { spawns: { id: number; x: number; y: number }[], scale: number }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const iconsRef = useRef<FallingIconData[]>([]);
@@ -1035,7 +1029,6 @@ function FallingAppsRenderer({ spawns, scale }: { spawns: { id: number; x: numbe
       iconsRef.current.push({
         id: globalIconId++,
         src: selectedIcons[i],
-        // 스케일된 화면 좌표를 원래 1440px 캔버스 좌표로 역계산합니다.
         x: (latest.x - rect.left) / scale,
         y: (latest.y - rect.top) / scale,
         vx: (Math.random() - 0.5) * 22, 
@@ -1088,7 +1081,6 @@ function FallingAppsRenderer({ spawns, scale }: { spawns: { id: number; x: numbe
 
         icon.el.style.transform = `translate(${icon.x}px, ${icon.y}px) rotate(${icon.rotation}deg)`;
 
-        // 스케일을 고려하여 화면 밖으로 나갔는지 판단합니다.
         if (icon.y < (window.innerHeight / scale) + 150) {
           alive.push(icon);
         } else {
@@ -1111,14 +1103,12 @@ function FallingAppsRenderer({ spawns, scale }: { spawns: { id: number; x: numbe
         position: "fixed", 
         top: 0, 
         left: "50%", 
-        // 물리 엔진 컨테이너도 캔버스와 동일하게 스케일링 적용
         transform: `translateX(-50%) scale(${scale})`, 
         transformOrigin: "top center",
         width: "1440px", 
-        height: "100%", 
+        height: `${100 / (scale || 1)}vh`, 
         pointerEvents: "none", 
         zIndex: 30000, 
-        overflow: "hidden" 
       }} 
     />
   );
@@ -1136,7 +1126,6 @@ export default function Page() {
   const [appSpawns, setAppSpawns] = useState<{ id: number; x: number; y: number }[]>([]);
   const [checkedStates, setCheckedStates] = useState<Record<string, boolean>>({});
 
-  // ✨ 현재 화면 크기에 따른 스케일 비율 값 불러오기
   const scale = useCanvasScale(1440);
   const CANVAS_HEIGHT = 9048;
 
@@ -1169,26 +1158,24 @@ export default function Page() {
       backgroundColor: "#000000", width: "100%", minHeight: "100vh",
       display: "flex", justifyContent: "center", position: "relative",
     }}>
-      {/* ── ✨ [반응형 핵심 래퍼] 화면 크기에 맞춰 전체 캔버스 높이/너비를 동적으로 잡아줍니다 ── */}
       <div style={{
         position: "relative",
         width: "100%",
         maxWidth: "1440px",
-        height: `${CANVAS_HEIGHT * scale}px`, // 스케일 비율만큼 전체 페이지 길이도 자동 축소
+        height: `${CANVAS_HEIGHT * scale}px`,
         margin: "0 auto",
         overflow: "hidden",
         flexShrink: 0,
       }}>
         
-        {/* ── 1440px 원본 사이즈 캔버스를 css scale을 통해 스크린 사이즈에 맞게 통째로 축소 ── */}
         <div style={{
           position: "absolute",
           top: 0,
           left: 0,
           width: "1440px",
           height: `${CANVAS_HEIGHT}px`,
-          transform: `scale(${scale})`, // 계산된 스케일 비율 적용
-          transformOrigin: "top left",  // 상단 좌측을 기준으로 줄어듦
+          transform: `scale(${scale})`,
+          transformOrigin: "top left",
         }}>
           {CANVAS_ITEMS.map((item) => (
             <CanvasItemRenderer
@@ -1202,7 +1189,6 @@ export default function Page() {
             />
           ))}
 
-          {/* ── 캔버스 위에 독립적으로 그려지는 초록색 체크 마크 ── */}
           {CANVAS_ITEMS.map((item) => {
             if (item.isCheckbox && checkedStates[item.id] && item.inlineCheck) {
               return (
@@ -1227,23 +1213,21 @@ export default function Page() {
         </div>
       </div>
 
-      {/* ── 앱 아이콘 쏟아지기 물리 엔진 렌더러 ───────────────────────── */}
       <FallingAppsRenderer spawns={appSpawns} scale={scale} />
 
-      {/* ── 팝업 모달창 (배경 어두워짐) ────────────────────────── */}
+      {/* ── ✨ 팝업 모달창 (TS 에러 수정 완료 부분) ────────────────────────── */}
       {activeOverlays.map((overlay) => (
         <OverlayModal
           key={overlay.id}
           imageSrc={overlay.src}
           imageW={overlay.width}
-          imageH={overlay.height}
-          top={overlay.top}
-          left={overlay.left}
+          imageH={overlay.height ?? 0} // undefined일 경우 기본값(0) 할당
+          top={overlay.top ?? ""}
+          left={overlay.left ?? ""}
           onClose={() => setActiveOverlays([])}
         />
       ))}
 
-      {/* ── 구식 Windows XP 스타일의 각진 메세지창 UI ───────────────── */}
       {showXpModal && (
         <div style={{
           position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh",
@@ -1257,7 +1241,7 @@ export default function Page() {
             borderColor: "#FFFFFF #808080 #808080 #FFFFFF",
             boxShadow: "1px 1px 0px 0px #000000",
             width: "360px",
-            maxWidth: "90vw", // 모바일 대응
+            maxWidth: "90vw",
             padding: "2px"
           }}>
             <div style={{
@@ -1371,7 +1355,6 @@ export default function Page() {
         </div>
       )}
 
-      {/* ── 시작 진입부 인트로 WebGL CoverPage ── */}
       {!coverDone && (
         <CoverPage 
           onDone={handleCoverDone} 
