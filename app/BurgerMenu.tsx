@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import OverlayModal from "./OverlayModal";
 
-const MOBILE_SCALE = 2.12;
+const MOBILE_SCALE = 2.2;
 const DESKTOP_BASE  = 1440;
 
 const CONFIG = {

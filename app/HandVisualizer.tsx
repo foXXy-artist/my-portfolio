@@ -4,10 +4,10 @@ import { useRef, useEffect, useState } from "react";
 import type { HandLandmark } from "./useHandTracking";
 
 // ==========================================================
-// ⚙️ [설정 영역] 전체 배율 조절 (1.2배 유지)
+// ⚙️ [설정 영역] 전체 배율 조절 (1.08배 유지)
 // ==========================================================
 const BASE_SCALE = 1.08; 
-// 카메라 실제 크기: 가로 264px, 세로 198px
+// 카메라 실제 캔버스 내부 해상도: 가로 237.6px, 세로 178.2px
 const W = 220 * BASE_SCALE;
 const H = 165 * BASE_SCALE;
 
@@ -27,24 +27,20 @@ export default function HandVisualizer({ videoRef, landmarks, detected, fistLeve
   const maskCanvasRef = useRef<HTMLCanvasElement>(null);
   const maskVideoRef = useRef<HTMLVideoElement>(null);
   
-  // 💡 [추가됨] 카메라가 켜져 있는지(활성화 상태인지) 실시간으로 감지하는 상태
+  // 카메라가 켜져 있는지(활성화 상태인지) 실시간으로 감지하는 상태
   const [isCameraActive, setIsCameraActive] = useState(false);
 
-  // 💡 [추가됨] 0.5초마다 비디오 스트림 상태를 확인하여 이미지를 전환합니다.
   useEffect(() => {
     const checkCamera = () => {
       const stream = videoRef.current?.srcObject as MediaStream;
       if (stream && stream.getVideoTracks) {
         const tracks = stream.getVideoTracks();
-        // 트랙이 존재하고 라이브 상태이면 카메라 켜짐으로 간주
         setIsCameraActive(tracks.length > 0 && tracks[0].readyState === "live");
       } else {
-        // 권한 거부, 혹은 스트림이 아예 없으면 꺼짐으로 간주
         setIsCameraActive(false);
       }
     };
     
-    // 계속해서 카메라 연결/해제 상태를 주기적으로 확인
     const intervalId = setInterval(checkCamera, 500);
     return () => clearInterval(intervalId);
   }, [videoRef]);
@@ -135,69 +131,93 @@ export default function HandVisualizer({ videoRef, landmarks, detected, fistLeve
   }, []);
 
   return (
-    // 🌟 [최상위 래퍼: 전체 화면(Viewport) 기준 Fixed] 
-    <div style={{ position: "fixed", bottom: 80, right: 20, zIndex: 17000, width: W, height: H, pointerEvents: "none" }}>
-      
-      {/* ══════════════════════════════════════════════════════════════════════
-          🎨 [카메라 테두리(프레임) 이미지] 
-          ══════════════════════════════════════════════════════════════════════ */}
+    // 🌟 [반응형 최상위 래퍼]
+    <div 
+      style={{ 
+        position: "fixed", 
+        bottom: "clamp(30px, 5vh, 80px)", 
+        right: "clamp(12px, 2vw, 20px)", 
+        zIndex: 17000, 
+        width: "clamp(140px, 16.5vw, 237.6px)", 
+        aspectRatio: "237.6 / 178.2", 
+        pointerEvents: "none" 
+      }}
+    >
+      {/* 1. 카메라 테두리(프레임) 이미지 */}
+      {/* 💡 maxWidth: "none", maxHeight: "none"을 추가하여 전역 스타일의 방해를 무시합니다 */}
       <img 
         src="/images/camera box tex.png" 
-        alt="image" 
+        alt="frame" 
         style={{
-          position: "fixed",
-          right: -20,
-          bottom: 64,
-          width: "346px",
-          height: "200px",
+          position: "absolute",
+          right: "-16.84%",
+          bottom: "-8.98%",
+          width: "145.62%",
+          height: "112.23%", 
+          maxWidth: "none", 
+          maxHeight: "none",
           zIndex: 10,
           pointerEvents: "none", 
         }} 
       />
 
-      {/* 💡 [핵심 수정] 카메라 상태(isCameraActive)에 따라 이미지가 동적으로 교체됩니다. */}
+      {/* 2. 카메라 상태 배지 이미지 */}
       <img 
         src={isCameraActive ? "/images/u r on camera.jpg" : "/images/u r not on camera.png"} 
         alt="camera status" 
         style={{
-          position: "fixed",
-          bottom: 26,    
-          right: 6,     
-          width: "120px",
+          position: "absolute",
+          bottom: "-30.3%",    
+          right: "-5.9%",     
+          width: "50.5%",
           height: "auto",
+          maxWidth: "none",
           zIndex: 11,    
         }} 
       />
 
+      {/* 3. 캠코더 아이콘 */}
       <img 
         src="/images/camcoder.png" 
-        alt="image" 
+        alt="camcorder" 
         style={{
-          position: "fixed",
-          bottom: 125,    
-          right: 224,     
-          width: "63px",
+          position: "absolute",
+          bottom: "25.2%",    
+          right: "85.8%",     
+          width: "26.5%",
           rotate: "-10deg",
           height: "auto",
+          maxWidth: "none",
           zIndex: 11,    
         }} 
       />
+
+      {/* 4. 흘러내리는 카메라 이미지 */}
       <img 
         src="/images/camera with melting.png" 
-        alt="image" 
+        alt="melting camera" 
         style={{
-          position: "fixed",
-          bottom: 162,    
-          right: -6,     
-          width: "118px",
+          position: "absolute",
+          bottom: "46%",    
+          right: "-10.9%",     
+          width: "49.6%",
           height: "auto",
+          maxWidth: "none",
           zIndex: 11,    
         }} 
       />
 
       {/* 🎥 [실제 카메라 화면 영역] */}
-      <div style={{ position: "absolute", inset: 0, borderRadius: 8 * BASE_SCALE, overflow: "hidden", boxShadow: "0 0 14px rgba(0,0,0,0.6)", pointerEvents: "auto" }}>
-        
+      <div 
+        style={{ 
+          position: "absolute", 
+          inset: 0, 
+          borderRadius: "6px", 
+          overflow: "hidden", 
+          boxShadow: "0 0 14px rgba(0,0,0,0.6)", 
+          pointerEvents: "auto" 
+        }}
+      >
         {/* 마스크 영상 원본 (숨김) */}
         <video ref={maskVideoRef} src="/images/mask.mp4" loop autoPlay muted playsInline style={{ display: "none" }} />
         
@@ -205,9 +225,9 @@ export default function HandVisualizer({ videoRef, landmarks, detected, fistLeve
         <video ref={videoRef} autoPlay playsInline muted style={{ width: "100%", height: "100%", objectFit: "cover", transform: "scaleX(-1)" }} />
         
         {/* 2층. 얼굴 마스크 */}
-        <canvas ref={maskCanvasRef} width={W} height={H} style={{ position: "absolute", top: 0, left: 0, pointerEvents: "none", zIndex: 1 }} />
+        <canvas ref={maskCanvasRef} width={W} height={H} style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", pointerEvents: "none", zIndex: 1 }} />
 
-        {/* 🌟 3층. 필터 (soft-light) */}
+        {/* 3층. 필터 (soft-light) */}
         <img 
           src="/images/filter 5.png" 
           alt="camera filter" 
@@ -219,10 +239,10 @@ export default function HandVisualizer({ videoRef, landmarks, detected, fistLeve
         />
         
         {/* 4층. 손 뼈대 */}
-        <canvas ref={handCanvasRef} width={W} height={H} style={{ position: "absolute", top: 0, left: 0, pointerEvents: "none", zIndex: 3 }} />
+        <canvas ref={handCanvasRef} width={W} height={H} style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", pointerEvents: "none", zIndex: 3 }} />
         
         {/* 5층. 주먹 게이지 바 */}
-        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 4 * BASE_SCALE, background: "rgba(0,0,0,0.4)", zIndex: 4 }}>
+        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: "2.5%", background: "rgba(0,0,0,0.4)", zIndex: 4 }}>
           <div style={{ height: "100%", width: `${fistLevel * 100}%`, background: `hsl(${120 - fistLevel * 120},80%,55%)` }} />
         </div>
       </div>
