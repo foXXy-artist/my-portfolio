@@ -4,8 +4,9 @@ import React, { useState, useEffect, useRef } from "react";
 import { motion, useMotionValue } from "framer-motion";
 
 // ══════════════════════════════════════════════════════════════════
-// ⚙️ [설정 공간 1] - 페이지 기본 설정
+// ⚙️ [설정 공간 1] - 페이지 기본 설정 및 캔버스 규격
 // ══════════════════════════════════════════════════════════════════
+const CANVAS_WIDTH = 1440;
 const CANVAS_H = 2857;                                 // 전체 페이지 세로 높이
 const AUDIO_SRC = "/images/nirvxxa/water2.mp4";
 const DOLLAR_EXIT_DURATION = 2.8;
@@ -28,7 +29,6 @@ const WATER_VIDEO_BOTTOM = 0;
 const WATER_VIDEO_LEFT = 0;         
 
 const VIDEO_ABSOLUTE_TOP = CANVAS_H - WATER_VIDEO_BOTTOM - WATER_VIDEO_H;
-// ══════════════════════════════════════════════════════════════════
 
 // ══════════════════════════════════════════════════════════════════
 // 📊 [설정 공간 3] - 부력(떠오르는 높이) 조절
@@ -41,7 +41,19 @@ const CUSTOM_FLOAT_CONFIG: Record<string, { speedRatio: number; maxFloatUp: numb
   "bottom": { speedRatio: 0.6, maxFloatUp: 1050 },
   "detail": { speedRatio: 0.25, maxFloatUp: 220 }
 };
-// ══════════════════════════════════════════════════════════════════
+
+// 반응형 좌표/크기 변환 도우미 함수
+const getPercentX = (pxValue: string | number) => {
+  if (typeof pxValue === "string" && pxValue.endsWith("%")) return pxValue;
+  const num = typeof pxValue === "string" ? parseFloat(pxValue) : pxValue;
+  return `${(num / CANVAS_WIDTH) * 100}%`;
+};
+
+const getPercentY = (pxValue: string | number) => {
+  if (typeof pxValue === "string" && pxValue.endsWith("%")) return pxValue;
+  const num = typeof pxValue === "string" ? parseFloat(pxValue) : pxValue;
+  return `${(num / CANVAS_H) * 100}%`;
+};
 
 interface CanvasItem {
   id: string;
@@ -53,10 +65,11 @@ interface CanvasItem {
   height?: string;
   rotate?: string;
   zIndex?: number;
+  objectFit?: "cover" | "fill" | "contain";
 }
 
 const CANVAS_ITEMS: CanvasItem[] = [
-  { id: "elevator", type: "image", src: "/images/elevator.jpg", top: "0px", left: "136px", width: "1135px", height: "2857px", rotate: "0deg", zIndex: 1 },
+  { id: "elevator copy", type: "image", src: "/images/elevator copy.jpg", top: "0px", left: "136px", width: "1135px", height: "100%", rotate: "0deg", zIndex: 1, objectFit: "cover" },
   { id: "top box", type: "image", src: "/images/top box.png", top: "128px", left: "342px", width: "770px", height: "253px", rotate: "0deg", zIndex: 2 },
   { id: "circle foXXy red", type: "image", src: "/images/nirvxxa/circle foXXy red.png", top: "297px", left: "1025px", width: "104px", height: "88px", rotate: "0deg", zIndex: 3 },
   { id: "4", type: "image", src: "/images/nirvxxa/4.png", top: "224px", left: "495px", width: "131px", height: "82px", rotate: "0deg", zIndex: 3 },
@@ -70,7 +83,7 @@ const CANVAS_ITEMS: CanvasItem[] = [
   { id: "nirvxxa doodle", type: "image", src: "/images/nirvxxa/nirvxxa doodle.png", top: "335px", left: "564px", width: "200px", height: "163px", rotate: "0deg", zIndex: 4 },
   { id: "whole box", type: "image", src: "/images/nirvxxa/whole box.png", top: "247px", left: "1179px", width: "220px", height: "171px", rotate: "6deg", zIndex: 4 },
   { id: "collect me now", type: "image", src: "/images/collect me now.png", top: "346px", left: "254px", width: "274px", height: "63px", rotate: "0deg", zIndex: 3 },
-  { id: "video", type: "video", src: "/images/nirvxxa/video.mp4", top: "490px", left: "219px", width: "238px", height: "199", rotate: "0deg", zIndex: 3 },
+  { id: "video", type: "video", src: "/images/nirvxxa/video.mp4", top: "490px", left: "219px", width: "238px", height: "199px", rotate: "0deg", zIndex: 3 },
   { id: "tv_filter", type: "image", src: "/images/tv_filter.png", top: "413px", left: "194px", width: "357px", height: "326px", rotate: "0deg", zIndex: 4 },
   { id: "nirvana baby", type: "image", src: "/images/nirvxxa/nirvana baby.png", top: "404px", left: "76px", width: "194px", height: "112px", rotate: "0deg", zIndex: 5 },
   { id: "detail", type: "image", src: "/images/nirvxxa/detail.png", top: "834px", left: "208px", width: "986px", height: "1315px", rotate: "0deg", zIndex: 2 },
@@ -86,7 +99,7 @@ const CANVAS_ITEMS: CanvasItem[] = [
   { id: "bottom", type: "image", src: "/images/nirvxxa/bottom.png", top: "1900px", left: "231px", width: "424px", height: "388px", rotate: "-180deg", zIndex: 2 },
 ];
 
-const FIXED_IDS = new Set(["elevator"]);
+const FIXED_IDS = new Set(["elevator copy"]);
 
 // ══════════════════════════════════════════════════════════════════
 // 🟢 [버거 수정 완벽 반영] 실시간 수면 감지 및 크로마키 제거 엔진
@@ -196,7 +209,7 @@ function RealtimeWaterTracker({
 }
 
 // ══════════════════════════════════════════════════════════════════
-// FloatingItem — 실시간 물 높이에 연동되어 떠오르는 컴포넌트
+// FloatingItem — 실시간 물 높이에 연동되어 떠오르는 반응형 컴포넌트
 // ══════════════════════════════════════════════════════════════════
 interface FloatingItemProps {
   item: CanvasItem;
@@ -210,12 +223,12 @@ function FloatingItem({ item, waterTopPx, index }: FloatingItemProps) {
   const itemTopPx = parseInt(item.top, 10);
   const itemWidthPx = parseInt(item.width, 10);
   
-  let itemHeightPx = item.height ? parseInt(item.height, 10) : itemWidthPx * 0.8;
+  let itemHeightPx = item.height && item.height !== "100%" ? parseInt(item.height, 10) : itemWidthPx * 0.8;
   const itemBottomPx = itemTopPx + itemHeightPx;
 
   const isFloating = !isFixed && waterTopPx < itemBottomPx;
   
-  let floatY = 0;
+  let floatYPx = 0;
   if (isFloating) {
     let currentRatio = BUOYANCY_SPEED_RATIO;
     let currentMaxUp = 9999; 
@@ -226,25 +239,28 @@ function FloatingItem({ item, waterTopPx, index }: FloatingItemProps) {
     }
 
     const calculatedFloat = (waterTopPx - itemBottomPx) * currentRatio;
-    floatY = Math.max(-currentMaxUp, calculatedFloat);
+    floatYPx = Math.max(-currentMaxUp, calculatedFloat);
   }
 
+  // 💡 부력 이동값을 %로 변환하여 반응형 화면에서도 정확한 비율로 떠오르도록 처리
+  const floatYPercent = itemHeightPx > 0 ? (floatYPx / itemHeightPx) * 100 : 0;
+
   const baseStyle: React.CSSProperties = {
-    position:   "absolute",
-    top:        item.top,
-    left:       item.left,
-    width:      item.width,
-    height:     item.height ?? "auto",
-    zIndex:     isFixed ? (item.zIndex ?? 0) : (item.zIndex ?? 0) + 10,
-    display:    "block",
+    position: "absolute",
+    top: getPercentY(item.top),
+    left: getPercentX(item.left),
+    width: getPercentX(item.width),
+    height: item.height ? (item.height === "100%" ? "100%" : getPercentY(item.height)) : "auto",
+    zIndex: isFixed ? (item.zIndex ?? 0) : (item.zIndex ?? 0) + 10,
+    display: "block",
   };
 
   const content =
     item.type === "video" ? (
-      <video src={item.src} autoPlay loop muted playsInline style={{ width: "100%", height: "100%", display: "block", objectFit: "cover" }} />
+      <video src={item.src} autoPlay loop muted playsInline style={{ width: "100%", height: "100%", display: "block", objectFit: item.objectFit || "cover" }} />
     ) : (
       // eslint-disable-next-line @next/next/no-img-element
-      <img src={item.src} alt="" style={{ width: "100%", height: "100%", display: "block" }} draggable={false} />
+      <img src={item.src} alt="" style={{ width: "100%", height: "100%", display: "block", objectFit: item.objectFit || "contain" }} draggable={false} />
     );
 
   if (isFixed) {
@@ -259,7 +275,7 @@ function FloatingItem({ item, waterTopPx, index }: FloatingItemProps) {
       style={{
         ...baseStyle,
         transformOrigin: "center bottom",
-        y: floatY, 
+        y: `${floatYPercent}%`, 
         rotate: item.rotate ? parseFloat(item.rotate) : 0
       }}
     >
@@ -278,8 +294,8 @@ function FloatingItem({ item, waterTopPx, index }: FloatingItemProps) {
 // ══════════════════════════════════════════════════════════════════
 export default function Page() {
   const [dollarVisible, setDollarVisible]   = useState(false);
-  const [dollarPulled,  setDollarPulled]    = useState(false); // 💡 달러가 당겨졌는지를 먼저 추적하는 상태 추가
-  const [floodActive,   setFloodActive]     = useState(false); // 💡 물 렌더링은 나중에 추적
+  const [dollarPulled,  setDollarPulled]    = useState(false); // 💡 달러가 당겨졌는지를 추적
+  const [floodActive,   setFloodActive]     = useState(false); // 💡 물 렌더링 추적
   
   const [waterTopPx, setWaterTopPx] = useState(CANVAS_H);
 
@@ -295,7 +311,7 @@ export default function Page() {
   }, []);
 
   return (
-    <main style={{ backgroundColor: "#FFFFFF", width: "100%", minHeight: "100vh", display: "flex", justifyContent: "center", position: "relative" }}>
+    <main style={{ backgroundColor: "#FFFFFF", width: "100%", minHeight: "100vh", display: "flex", justifyContent: "center", alignItems: "flex-start", position: "relative" }}>
       
       <style>{`
         @keyframes liquidBobbing {
@@ -309,7 +325,18 @@ export default function Page() {
         }
       `}</style>
 
-      <div style={{ position: "relative", width: "1440px", height: `${CANVAS_H}px`, backgroundImage: "url('/images/red error copy2.jpg')", backgroundSize: "cover", backgroundPosition: "center", overflow: "hidden", flexShrink: 0 }}>
+      {/* 💡 100% 반응형 아우터 컨테이너 */}
+      <div style={{ 
+        position: "relative", 
+        width: "100%", 
+        maxWidth: `${CANVAS_WIDTH}px`, 
+        aspectRatio: `${CANVAS_WIDTH} / ${CANVAS_H}`, 
+        backgroundImage: "url('/images/red error copy2.jpg')", 
+        backgroundSize: "cover", 
+        backgroundPosition: "center", 
+        overflow: "hidden", 
+        flexShrink: 0 
+      }}>
         
         {CANVAS_ITEMS.map((item, i) => (
           <FloatingItem key={item.id} item={item} waterTopPx={waterTopPx} index={i} />
@@ -320,10 +347,10 @@ export default function Page() {
             position: "absolute", 
             zIndex: 100, 
             pointerEvents: "none",
-            left: `${WATER_VIDEO_LEFT}px`, 
-            bottom: `${WATER_VIDEO_BOTTOM}px`, 
-            width: `${WATER_VIDEO_W}px`, 
-            height: `${WATER_VIDEO_H}px`
+            left: getPercentX(WATER_VIDEO_LEFT), 
+            bottom: getPercentY(WATER_VIDEO_BOTTOM), 
+            width: getPercentX(WATER_VIDEO_W), 
+            height: getPercentY(WATER_VIDEO_H)
           }}>
             <RealtimeWaterTracker
               src={WATER_VIDEO_SRC}
@@ -345,7 +372,7 @@ export default function Page() {
             dragMomentum={false}
             onDragEnd={(_, info) => {
               if (info.offset.y >= DRAG_TRIGGER_PX) {
-                // 1️⃣ 달러 애니메이션 트리거 (과부하 없음, 부드럽게 날아감)
+                // 1️⃣ 달러 애니메이션 트리거
                 setDollarPulled(true); 
 
                 // 2️⃣ 지정된 시간(1.2초) 대기 후 영상 및 오디오 렌더링 트리거
@@ -361,24 +388,30 @@ export default function Page() {
                 dragY.set(0); 
               }
             }}
-            initial={{ y: DOLLAR_HIDDEN_Y }}
-            animate={dollarPulled ? { y: -2200, opacity: 1, scale: 0.8 } : { y: 0 }}
+            initial={{ y: `${(DOLLAR_HIDDEN_Y / 250) * 100}%` }}
+            animate={dollarPulled ? { y: "-800%", opacity: 1, scale: 0.8 } : { y: "0%" }}
             transition={
               dollarPulled 
                 ? { duration: DOLLAR_EXIT_DURATION, ease: "easeInOut" } 
                 : { delay: 0.1, duration: 1.0, type: "spring", stiffness: 80, damping: 14 }
             }
             style={{
-              position:  "absolute", top: DOLLAR_LAND_TOP, left: DOLLAR_LAND_LEFT,
-              zIndex: 200, cursor: dollarPulled ? "default" : "grab", touchAction: "none", userSelect: "none",
+              position: "absolute", 
+              top: getPercentY(DOLLAR_LAND_TOP), 
+              left: getPercentX(DOLLAR_LAND_LEFT),
+              width: getPercentX(409),
+              zIndex: 200, 
+              cursor: dollarPulled ? "default" : "grab", 
+              touchAction: "none", 
+              userSelect: "none",
             }}
             whileDrag={!dollarPulled ? { cursor: "grabbing", scale: 1.04 } : {}}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/images/nirvxxa/dollar.png" alt="dollar" draggable={false} style={{ width: 409, display: "block", pointerEvents: "none" }} />
+            <img src="/images/nirvxxa/dollar.png" alt="dollar" draggable={false} style={{ width: "100%", display: "block", pointerEvents: "none" }} />
             
             {!dollarPulled && (
-              <motion.div animate={{ y: [0, 10, 0] }} transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }} style={{ textAlign: "center", marginTop: 8, fontSize: 22, color: "rgba(0,0,0,0.45)", lineHeight: 1 }}>
+              <motion.div animate={{ y: [0, 10, 0] }} transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }} style={{ textAlign: "center", marginTop: 8, fontSize: "1.5vw", color: "rgba(0,0,0,0.45)", lineHeight: 1 }}>
                 ↓
               </motion.div>
             )}

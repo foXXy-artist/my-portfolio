@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 
 interface CanvasItem {
   id: string;
@@ -16,9 +17,9 @@ interface CanvasItem {
 
 const CANVAS_ITEMS: CanvasItem[] = [
   {
-    id: "elevator",
+    id: "elevator copy",
     type: "image",
-    src: "/images/elevator.jpg",
+    src: "/images/elevator copy.jpg",
     top: "0px",
     left: "136px",
     width: "1135px",
@@ -300,38 +301,52 @@ const CANVAS_ITEMS: CanvasItem[] = [
   },
 ];
 
+// 💡 픽셀(px)을 기준 해상도(1440x2857) 대비 퍼센트(%)로 변환하는 헬퍼 함수
+const getPercentX = (pxValue: string) => `${(parseFloat(pxValue) / 1440) * 100}%`;
+const getPercentY = (pxValue: string) => `${(parseFloat(pxValue) / 2857) * 100}%`;
+
 export default function Page() {
   return (
     <main
       style={{
-        // 💡 모니터 전체 배경 (1440px 바깥 영역)도 통일하고 싶다면 아래 색상을 배경 이미지 주조색과 맞추거나 똑같이 backgroundImage를 주셔도 됩니다.
-        backgroundColor: "#FFFFFF", 
+        backgroundColor: "#FFFFFF",
         width: "100%",
         minHeight: "100vh",
         display: "flex",
         justifyContent: "center",
+        alignItems: "flex-start", // 화면이 줄어들 때 상단 기준으로 스크롤 되도록 설정
         position: "relative",
       }}
     >
-      {/* 🎨 1440 × 2857 고정 배경 캔버스 */}
+      {/* 🎨 반응형으로 크기가 변하는 배경 캔버스 */}
       <div
         style={{
           position: "relative",
-          width: "1440px",
-          height: "2857px",
-          
-          // 💡 [배경 이미지 설정 추가!]
-          backgroundImage: "url('/images/red error copy2.jpg')", // 👈 준비하신 배경 이미지 파일명으로 바꿔주세요!
-          backgroundSize: "cover",       // 이미지가 1440x989 영역에 꽉 차도록 비율을 맞춰 늘립니다.
-          backgroundPosition: "center",  // 이미지가 캔버스 정중앙에 오도록 맞춥니다.
-          backgroundRepeat: "no-repeat", // 이미지가 모자라도 바둑판처럼 반복되지 않게 합니다.
-
+          width: "100%",           // 부모 요소에 맞춰 꽉 차게 설정
+          maxWidth: "1440px",      // 1440px 이상으로는 커지지 않게 제한 (원치 않으면 삭제 가능)
+          aspectRatio: "1440 / 2857", // ⭐️ 원본 비율 유지! 이 속성이 반응형의 핵심입니다.
+          backgroundImage: "url('/images/red error copy2.jpg')",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
           overflow: "hidden",
-          flexShrink: 0,
         }}
       >
-        {CANVAS_ITEMS.map((item) =>
-          item.type === "video" ? (
+        {CANVAS_ITEMS.map((item) => {
+          // 💡 각각의 아이템 위치와 크기를 %로 동적 변환
+          const responsiveStyle: React.CSSProperties = {
+            position: "absolute",
+            top: getPercentY(item.top),
+            left: getPercentX(item.left),
+            width: getPercentX(item.width),
+            height: item.height ? getPercentY(item.height) : "auto", // height가 지정 안된 경우 auto로 비율 유지
+            transform: item.rotate ? `rotate(${item.rotate})` : undefined,
+            zIndex: item.zIndex ?? 0,
+            display: "block",
+            objectFit: "cover",
+          };
+
+          return item.type === "video" ? (
             <video
               key={item.id}
               src={item.src}
@@ -339,17 +354,7 @@ export default function Page() {
               loop
               muted
               playsInline
-              style={{
-                position: "absolute",
-                top: item.top,
-                left: item.left,
-                width: item.width,
-                height: item.height ?? "auto",
-                transform: item.rotate ? `rotate(${item.rotate})` : undefined,
-                zIndex: item.zIndex ?? 0,
-                display: "block",
-                objectFit: "cover",
-              }}
+              style={responsiveStyle}
             />
           ) : (
             // eslint-disable-next-line @next/next/no-img-element
@@ -357,19 +362,10 @@ export default function Page() {
               key={item.id}
               src={item.src}
               alt=""
-              style={{
-                position: "absolute",
-                top: item.top,
-                left: item.left,
-                width: item.width,
-                height: item.height ?? "auto",
-                transform: item.rotate ? `rotate(${item.rotate})` : undefined,
-                zIndex: item.zIndex ?? 0,
-                display: "block",
-              }}
+              style={responsiveStyle}
             />
-          )
-        )}
+          );
+        })}
       </div>
     </main>
   );

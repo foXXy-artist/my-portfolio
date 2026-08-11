@@ -2,6 +2,10 @@
 
 import React from "react";
 
+// 💡 캔버스 기준 원본 크기
+const CANVAS_WIDTH = 1440;
+const CANVAS_HEIGHT = 2857;
+
 interface CanvasItem {
   id: string;
   type: "image" | "video";
@@ -16,9 +20,9 @@ interface CanvasItem {
 
 const CANVAS_ITEMS: CanvasItem[] = [
   {
-    id: "elevator",
+    id: "elevator copy",
     type: "image",
-    src: "/images/elevator.jpg",
+    src: "/images/elevator copy.jpg",
     top: "0px",
     left: "136px",
     width: "1135px",
@@ -314,34 +318,58 @@ export default function Page() {
   return (
     <main
       style={{
-        // 💡 모니터 전체 배경 (1440px 바깥 영역)도 통일하고 싶다면 아래 색상을 배경 이미지 주조색과 맞추거나 똑같이 backgroundImage를 주셔도 됩니다.
         backgroundColor: "#FFFFFF", 
         width: "100%",
         minHeight: "100vh",
         display: "flex",
         justifyContent: "center",
+        alignItems: "flex-start", // 💡 Header 바로 밑에 여백 없이 밀착
         position: "relative",
       }}
     >
-      {/* 🎨 1440 × 2857 고정 배경 캔버스 */}
+      {/* 🎨 반응형 비율 캔버스 (1440 × 2857) */}
       <div
         style={{
           position: "relative",
-          width: "1440px",
-          height: "2857px",
+          width: "100%",
+          maxWidth: `${CANVAS_WIDTH}px`,
+          aspectRatio: `${CANVAS_WIDTH} / ${CANVAS_HEIGHT}`,
           
-          // 💡 [배경 이미지 설정 추가!]
-          backgroundImage: "url('/images/red error copy2.jpg')", // 👈 준비하신 배경 이미지 파일명으로 바꿔주세요!
-          backgroundSize: "cover",       // 이미지가 1440x989 영역에 꽉 차도록 비율을 맞춰 늘립니다.
-          backgroundPosition: "center",  // 이미지가 캔버스 정중앙에 오도록 맞춥니다.
-          backgroundRepeat: "no-repeat", // 이미지가 모자라도 바둑판처럼 반복되지 않게 합니다.
-
+          // 💡 배경 이미지 설정 유지
+          backgroundImage: "url('/images/red error copy2.jpg')",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+          
           overflow: "hidden",
-          flexShrink: 0,
         }}
       >
-        {CANVAS_ITEMS.map((item) =>
-          item.type === "video" ? (
+        {CANVAS_ITEMS.map((item) => {
+          // 💡 px 값을 숫자로 추출하여 퍼센트(%) 비율로 계산
+          const topNum = parseFloat(item.top);
+          const leftNum = parseFloat(item.left);
+          const widthNum = parseFloat(item.width);
+          const heightNum = item.height ? parseFloat(item.height) : undefined;
+
+          const topPercent = `${(topNum / CANVAS_HEIGHT) * 100}%`;
+          const leftPercent = `${(leftNum / CANVAS_WIDTH) * 100}%`;
+          const widthPercent = `${(widthNum / CANVAS_WIDTH) * 100}%`;
+          const heightPercent = heightNum ? `${(heightNum / CANVAS_HEIGHT) * 100}%` : "auto";
+
+          // 공통 스타일 정의
+          const commonStyle: React.CSSProperties = {
+            position: "absolute",
+            top: topPercent,
+            left: leftPercent,
+            width: widthPercent,
+            height: heightPercent,
+            transform: item.rotate ? `rotate(${item.rotate})` : undefined,
+            zIndex: item.zIndex ?? 0,
+            display: "block",
+            willChange: "transform", // 💡 GPU 가속을 통한 렌더링 최적화
+          };
+
+          return item.type === "video" ? (
             <video
               key={item.id}
               src={item.src}
@@ -349,17 +377,8 @@ export default function Page() {
               loop
               muted
               playsInline
-              style={{
-                position: "absolute",
-                top: item.top,
-                left: item.left,
-                width: item.width,
-                height: item.height ?? "auto",
-                transform: item.rotate ? `rotate(${item.rotate})` : undefined,
-                zIndex: item.zIndex ?? 0,
-                display: "block",
-                objectFit: "cover",
-              }}
+              preload="none" // 💡 초기 로딩 시 비디오 리소스 렉 방지
+              style={{ ...commonStyle, objectFit: "cover" }}
             />
           ) : (
             // eslint-disable-next-line @next/next/no-img-element
@@ -367,19 +386,12 @@ export default function Page() {
               key={item.id}
               src={item.src}
               alt=""
-              style={{
-                position: "absolute",
-                top: item.top,
-                left: item.left,
-                width: item.width,
-                height: item.height ?? "auto",
-                transform: item.rotate ? `rotate(${item.rotate})` : undefined,
-                zIndex: item.zIndex ?? 0,
-                display: "block",
-              }}
+              loading="lazy"   // 💡 비동기 지연 로딩
+              decoding="async" // 💡 이미지 해독 분산 처리
+              style={commonStyle}
             />
-          )
-        )}
+          );
+        })}
       </div>
     </main>
   );

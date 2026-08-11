@@ -2,6 +2,9 @@
 
 import React, { useState, useCallback, useRef } from "react";
 
+const CANVAS_WIDTH = 1440;
+const CANVAS_HEIGHT = 2857;
+
 interface CanvasItem {
   id: string;
   type: "image" | "video";
@@ -12,12 +15,24 @@ interface CanvasItem {
   height?: string;
   rotate?: string;
   zIndex?: number;
+  objectFit?: "cover" | "fill" | "contain";
 }
 
 const CANVAS_ITEMS: CanvasItem[] = [
-  { id: "elevator", type: "image", src: "/images/elevator.jpg", top: "0px", left: "136px", width: "1135px", height: "2857px", rotate: "0deg", zIndex: 1 },
+  {
+    id: "elevator copy",
+    type: "image",
+    src: "/images/elevator copy.jpg",
+    top: "0px",
+    left: "136px",
+    width: "1135px",
+    height: "2857px",
+    rotate: "0deg",
+    zIndex: 1,
+    objectFit: "cover", // 캔버스 전체 높이(2857px)에 강제로 꽉 채우도록 지정
+  },
   { id: "top box", type: "image", src: "/images/top box.png", top: "126px", left: "336px", width: "769px", height: "253px", rotate: "0deg", zIndex: 2 },
-  { id: "circle foXXy red", type: "image", src: "/images/circle foXXy red.png", top: "287px", left: "1000px", width: "118px", rotate: "0deg", zIndex: 3 },
+  { id: "circle foXXy red", type: "image", src: "/images/circle foXXy red.png", top: "287px", left: "1030px", width: "118px", rotate: "0deg", zIndex: 3 },
   { id: "2", type: "image", src: "/images/broke/2.png", top: "228px", left: "502px", width: "137px", rotate: "0deg", zIndex: 3 },
   { id: "image", type: "image", src: "/images/broke/image.png", top: "225px", left: "663px", width: "367px", height: "93.5px", rotate: "0deg", zIndex: 3 },
   { id: "poor", type: "image", src: "/images/broke/poor.png", top: "107px", left: "984px", width: "78px", rotate: "0deg", zIndex: 3 },
@@ -50,7 +65,6 @@ const CANVAS_ITEMS: CanvasItem[] = [
   { id: "bottom", type: "image", src: "/images/broke/bottom.jpg", top: "2287px", left: "232px", width: "424px", rotate: "-180deg", zIndex: 6 },
   { id: "title", type: "image", src: "/images/broke/title.png", top: "468px", left: "720px", width: "192px", rotate: "0deg", zIndex: 6 },
   { id: "size", type: "image", src: "/images/broke/size.png", top: "541px", left: "749px", width: "402px", rotate: "0deg", zIndex: 6 },
-  
   {
     id: "broke wallet hand",
     type: "image",
@@ -75,11 +89,23 @@ const DROP_IMAGES = [
 interface DroppedItem {
   id: number;
   src: string;
-  left: number;
-  top: number;
+  leftPercent: number;
+  topPercent: number;
   dropDist: number;
   rotMax: string;
 }
+
+const getPercentX = (pxValue: string | number) => {
+  if (typeof pxValue === "string" && pxValue.endsWith("%")) return pxValue;
+  const num = typeof pxValue === "string" ? parseFloat(pxValue) : pxValue;
+  return `${(num / CANVAS_WIDTH) * 100}%`;
+};
+
+const getPercentY = (pxValue: string | number) => {
+  if (typeof pxValue === "string" && pxValue.endsWith("%")) return pxValue;
+  const num = typeof pxValue === "string" ? parseFloat(pxValue) : pxValue;
+  return `${(num / CANVAS_HEIGHT) * 100}%`;
+};
 
 export default function Page() {
   const [droppedItems, setDroppedItems] = useState<DroppedItem[]>([]);
@@ -90,7 +116,6 @@ export default function Page() {
     setIsShaking(false);
     if (shakeTimeoutRef.current) clearTimeout(shakeTimeoutRef.current);
     
-    // 1. 지갑 흔들기(털기) 애니메이션 시작
     setTimeout(() => {
       setIsShaking(true);
       shakeTimeoutRef.current = setTimeout(() => {
@@ -98,14 +123,14 @@ export default function Page() {
       }, 600);
     }, 10);
 
-    // 2. 지갑이 위로 치켜들려 내용물이 쏟아지는 시점에 이미지 생성
     setTimeout(() => {
       const dropId = Date.now() + Math.random();
       const randomImgSrc = DROP_IMAGES[Math.floor(Math.random() * DROP_IMAGES.length)];
       
-      // 💡 지정해주신 구역 (left: 980px ~ width: 50px / top: 773px ~ height: 59px) 안에서 드랍 생성되도록 수정
-      const startX = 966 + (Math.random() * 12); // left 980 ~ 1030 사이
-      const startY = 782 + (Math.random() * 10); // top 773 ~ 832 사이
+      const startX = 966 + (Math.random() * 12);
+      const startY = 782 + (Math.random() * 10);
+      const leftPercent = (startX / CANVAS_WIDTH) * 100;
+      const topPercent = (startY / CANVAS_HEIGHT) * 100;
       
       const dropDistance = 3500; 
       const randomRotation = (Math.random() * 360 - 180) + "deg"; 
@@ -115,8 +140,8 @@ export default function Page() {
         {
           id: dropId,
           src: randomImgSrc,
-          left: startX,
-          top: startY,
+          leftPercent,
+          topPercent,
           dropDist: dropDistance,
           rotMax: randomRotation,
         },
@@ -136,11 +161,11 @@ export default function Page() {
         minHeight: "100vh",
         display: "flex",
         justifyContent: "center",
+        alignItems: "flex-start",
         position: "relative",
       }}
     >
       <style>{`
-        /* 💥 손목을 고정하고 지갑을 위로 강하게 들었다가 반동으로 제자리로 돌아오는 애니메이션 */
         @keyframes springWallet {
           0%   { transform: rotate(2deg); }
           20%  { transform: rotate(10deg); }   
@@ -150,7 +175,6 @@ export default function Page() {
           100% { transform: rotate(2deg); }    
         }
 
-        /* ⏬ 캔버스 밖으로 쭉 떨어지는 애니메이션 */
         @keyframes dropStraight {
           0%   { transform: translateY(0) rotate(0deg); opacity: 1; }
           95%  { opacity: 1; }
@@ -166,18 +190,36 @@ export default function Page() {
       <div
         style={{
           position: "relative",
-          width: "1440px",
-          height: "2857px",
+          width: "100%",
+          maxWidth: `${CANVAS_WIDTH}px`,
+          aspectRatio: `${CANVAS_WIDTH} / ${CANVAS_HEIGHT}`,
           backgroundImage: "url('/images/red error copy2.jpg')",
           backgroundSize: "cover",
           backgroundPosition: "center",
           backgroundRepeat: "no-repeat",
           overflow: "hidden",
-          flexShrink: 0,
         }}
       >
-        {CANVAS_ITEMS.map((item) =>
-          item.type === "video" ? (
+        {CANVAS_ITEMS.map((item) => {
+          const isWallet = item.id === "broke wallet hand";
+          const baseTransform = item.rotate && !isWallet ? `rotate(${item.rotate})` : undefined;
+          
+          const responsiveStyle: React.CSSProperties = {
+            position: "absolute",
+            top: getPercentY(item.top),
+            left: getPercentX(item.left),
+            width: getPercentX(item.width),
+            height: item.height ? getPercentY(item.height) : "auto", 
+            transform: baseTransform,
+            zIndex: item.zIndex ?? 0,
+            cursor: isWallet ? "pointer" : "default",
+            animation: isWallet && isShaking ? "springWallet 0.6s cubic-bezier(0.36, 0.07, 0.19, 0.97)" : "none",
+            transformOrigin: isWallet ? "right center" : "center",
+            display: "block",
+            objectFit: item.objectFit || "contain", // 기본값 contain 지정
+          };
+
+          return item.type === "video" ? (
             <video
               key={item.id}
               src={item.src}
@@ -185,17 +227,7 @@ export default function Page() {
               loop
               muted
               playsInline
-              style={{
-                position: "absolute",
-                top: item.top,
-                left: item.left,
-                width: item.width,
-                height: item.height ?? "auto",
-                transform: item.rotate ? `rotate(${item.rotate})` : undefined,
-                zIndex: item.zIndex ?? 0,
-                display: "block",
-                objectFit: "cover",
-              }}
+              style={responsiveStyle}
             />
           ) : (
             // eslint-disable-next-line @next/next/no-img-element
@@ -203,24 +235,11 @@ export default function Page() {
               key={item.id}
               src={item.src}
               alt={item.id}
-              onClick={item.id === "broke wallet hand" ? handleTriggerClick : undefined}
-              style={{
-                position: "absolute",
-                top: item.top,
-                left: item.left,
-                width: item.width,
-                height: item.height ?? "auto",
-                transform: item.id !== "broke wallet hand" && item.rotate ? `rotate(${item.rotate})` : undefined,
-                zIndex: item.zIndex ?? 0,
-                display: "block",
-                cursor: item.id === "broke wallet hand" ? "pointer" : "default",
-                transition: "none",
-                animation: item.id === "broke wallet hand" && isShaking ? "springWallet 0.6s cubic-bezier(0.36, 0.07, 0.19, 0.97)" : "none",
-                transformOrigin: item.id === "broke wallet hand" ? "right center" : "center",
-              }}
+              style={responsiveStyle}
+              onClick={isWallet ? handleTriggerClick : undefined}
             />
-          )
-        )}
+          );
+        })}
 
         {droppedItems.map((drop) => (
           // eslint-disable-next-line @next/next/no-img-element
@@ -231,15 +250,10 @@ export default function Page() {
             className="falling-item"
             style={{
               position: "absolute",
-              left: `${drop.left}px`,
-              top: `${drop.top}px`,
-              
-              /* 💡 크기를 기존(100px)의 95%인 95px로 수정 */
-              width: "70px", 
-              
-              /* 💡 유저님이 적용하신 zIndex 유지 */
+              left: `${drop.leftPercent}%`, 
+              top: `${drop.topPercent}%`,   
+              width: getPercentX(70),       
               zIndex: 5, 
-              
               ...( {
                 "--drop-dist": `${drop.dropDist}px`,
                 "--rot-max": drop.rotMax,

@@ -2,6 +2,10 @@
 
 import React, { useState, useCallback, useRef, useEffect, memo } from "react";
 
+// 💡 캔버스 기준 사이즈 설정
+const CANVAS_WIDTH = 1440;
+const CANVAS_HEIGHT = 2857;
+
 interface CanvasItem {
   id: string;
   type: "image" | "video";
@@ -12,13 +16,38 @@ interface CanvasItem {
   height?: string;
   rotate?: string;
   zIndex?: number;
+  objectFit?: "cover" | "fill" | "contain"; // 반응형 채우기를 위한 속성 추가
 }
 
+// 반응형 좌표/크기 변환 도우미 함수
+const getPercentX = (pxValue: string | number) => {
+  if (typeof pxValue === "string" && pxValue.endsWith("%")) return pxValue;
+  const num = typeof pxValue === "string" ? parseFloat(pxValue) : pxValue;
+  return `${(num / CANVAS_WIDTH) * 100}%`;
+};
+
+const getPercentY = (pxValue: string | number) => {
+  if (typeof pxValue === "string" && pxValue.endsWith("%")) return pxValue;
+  const num = typeof pxValue === "string" ? parseFloat(pxValue) : pxValue;
+  return `${(num / CANVAS_HEIGHT) * 100}%`;
+};
+
 // ══════════════════════════════════════════════════════════════════════
-// 💡 사용자님이 직접 작성하신 이미지 데이터 (100% 보존)
+// 💡 사용자님이 직접 작성하신 이미지 데이터 (반응형 대응 및 100% 보존)
 // ══════════════════════════════════════════════════════════════════════
 const CANVAS_ITEMS: CanvasItem[] = [
-  { id: "elevator", type: "image", src: "/images/elevator.jpg", top: "0px", left: "136px", width: "1135px", height: "2857px", rotate: "0deg", zIndex: 1 },
+  { 
+    id: "elevator copy", 
+    type: "image", 
+    src: "/images/elevator copy.jpg", 
+    top: "0px", 
+    left: "136px", 
+    width: "1135px", 
+    height: "100%", // 반응형을 위해 100%로 변경
+    rotate: "0deg", 
+    zIndex: 1,
+    objectFit: "cover" // 빈틈없이 꽉 채우기
+  },
   { id: "top box", type: "image", src: "/images/top box.png", top: "125px", left: "320px", width: "784px", height: "258px", rotate: "0deg", zIndex: 2 },
   { id: "circle foXXy red", type: "image", src: "/images/circle foXXy red.png", top: "287px", left: "1000px", width: "118px", rotate: "0deg", zIndex: 3 },
   { id: "6", type: "image", src: "/images/half/6.png", top: "219px", left: "505px", width: "151px", rotate: "0deg", zIndex: 3 },
@@ -50,7 +79,7 @@ const CANVAS_ITEMS: CanvasItem[] = [
 ];
 
 // ══════════════════════════════════════════════════════════════════════
-// 🚀 [개별 아이템 렌더러] (💡 스크롤 렉의 원인이었던 GPU 가속 옵션 제거!)
+// 🚀 [개별 아이템 렌더러]
 // ══════════════════════════════════════════════════════════════════════
 interface CanvasItemRendererProps {
   item: CanvasItem;
@@ -65,16 +94,17 @@ const CanvasItemRenderer = memo(function CanvasItemRenderer({
 }: CanvasItemRendererProps) {
   const [isHovered, setIsHovered] = useState(false);
 
+  // 상호작용 트리거(칼, 가위 등) 조건 유지[cite: 9]
   const isTriggerItem = ["knife", "gwen", "cutter", "scissors"].some(keyword => 
     item.src.toLowerCase().includes(keyword) || item.id.toLowerCase().includes(keyword)
   );
 
   const style: React.CSSProperties = {
     position: "absolute",
-    top: item.top,
-    left: item.left,
-    width: item.width,
-    height: item.height ?? "auto",
+    top: getPercentY(item.top),
+    left: getPercentX(item.left),
+    width: getPercentX(item.width),
+    height: item.height ? (item.height === "100%" ? "100%" : getPercentY(item.height)) : "auto",
     zIndex: item.zIndex ?? 0,
     cursor: isTriggerItem && !isSliced ? "pointer" : "default",
     transition: "transform 0.15s ease-out",
@@ -101,9 +131,9 @@ const CanvasItemRenderer = memo(function CanvasItemRenderer({
     >
       {item.type === "image" ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={item.src} alt={item.id} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        <img src={item.src} alt={item.id} style={{ width: "100%", height: "100%", objectFit: item.objectFit || "cover", display: "block" }} />
       ) : (
-        <video src={item.src} autoPlay loop muted playsInline style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        <video src={item.src} autoPlay loop muted playsInline style={{ width: "100%", height: "100%", objectFit: item.objectFit || "cover", display: "block" }} />
       )}
     </div>
   );
@@ -134,7 +164,7 @@ const PageContent = memo(({ triggerSlash, isSliced }: { triggerSlash?: (rect: DO
 });
 
 // ══════════════════════════════════════════════════════════════════════
-// ⚡ 메인 페이지 (Kung Fu Slash 검기 애니메이션 + 미세하고 자연스러운 바운스 낙하)
+// ⚡ 메인 페이지 (Kung Fu Slash 검기 애니메이션 + 물리 엔진 보존)[cite: 9]
 // ══════════════════════════════════════════════════════════════════════
 export default function Page() {
   const [slashPhase, setSlashPhase] = useState<'idle' | 'slashing' | 'sliced_waiting' | 'dropped'>('idle');
@@ -147,7 +177,7 @@ export default function Page() {
   const a_Ref = useRef<HTMLDivElement>(null);
   const b_Ref = useRef<HTMLDivElement>(null);
 
-  // 🔪 절단 액션 발동
+  // 🔪 절단 액션 발동[cite: 9]
   const triggerSlash = useCallback((rect: DOMRect) => {
     if (slashPhase !== 'idle') return;
 
@@ -168,13 +198,12 @@ export default function Page() {
 
   }, [slashPhase]);
 
-  // 💡 [자연스러운 물리엔진] 툭 끊기지 않고 아주 미세하게 통통 튀며 에너지가 소멸됨
+  // 💡 미세한 바운스 물리 엔진 로직 (유지)[cite: 9]
   useEffect(() => {
     if (slashPhase === 'sliced_waiting') {
       const dropTimer = setTimeout(() => {
         setSlashPhase('dropped');
         
-        // 💡 maxBounces를 3으로 늘려 자연스럽게 멈출 때까지 계산되도록 수정
         pieceA_Ref.current = {y: 0, vy: 0, bounces: 0, maxBounces: 3}; 
         pieceB_Ref.current = {y: 0, vy: 0, bounces: 0, maxBounces: 3}; 
 
@@ -190,12 +219,11 @@ export default function Page() {
           const pB = pieceB_Ref.current;
           const elapsed = now - startTime;
           
-          // 💡 중력을 다소 부드럽게 풀고, 튕기는 힘을 미세하게 유지해 자연스럽게 안착 유도 (절대 과하지 않게)
           const gravity = 1.5;         
           const bounceRatioA = 0.35;    
           const bounceRatioB = 0.3;   
 
-          // 1. 중간조각 (2번째 레이어)
+          // 중간조각[cite: 9]
           if (pB.bounces < pB.maxBounces) {
             pB.vy += gravity; 
             pB.y += pB.vy;    
@@ -209,7 +237,7 @@ export default function Page() {
             b.style.transform = `translate(20px, 50px) rotate(0.8deg)`;
           }
 
-          // 2. 윗조각 (맨 위 레이어) - 200ms(0.2초) 뒤에 시차를 두고 떨어짐
+          // 윗조각 - 시차 낙하[cite: 9]
           if (elapsed > 200) {
             if (pA.bounces < pA.maxBounces) {
               pA.vy += gravity; 
@@ -238,12 +266,13 @@ export default function Page() {
     }
   }, [slashPhase]);
 
+  // 💡 기존 고정 px에서 100% 반응형으로 변경
   const wrapperStyle: React.CSSProperties = {
     position: "absolute",
     top: 0,
     left: 0,
-    width: "1440px",
-    height: "2857px", 
+    width: "100%", // 1440px -> 100%
+    height: "100%", // 2857px -> 100%
     transition: slashPhase === 'dropped' ? "none" : "transform 0.05s linear",
     willChange: slashPhase !== 'idle' && slashPhase !== 'dropped' ? "transform, clip-path" : "auto",
   };
@@ -274,10 +303,20 @@ export default function Page() {
         minHeight: "100vh",
         display: "flex",
         justifyContent: "center",
+        alignItems: "flex-start",
         position: "relative",
       }}
     >
-      <div style={{ position: "relative", width: "1440px", height: "2857px", overflow: "hidden" }}>
+      {/* 💡 화면 크기에 맞게 자동으로 줄어들도록 껍데기 컨테이너 수정 */}
+      <div 
+        style={{ 
+          position: "relative", 
+          width: "100%",
+          maxWidth: `${CANVAS_WIDTH}px`,
+          aspectRatio: `${CANVAS_WIDTH} / ${CANVAS_HEIGHT}`, 
+          overflow: "hidden" 
+        }}
+      >
         
         <div style={slashPhase !== 'idle' ? slice3 : { width: "100%", height: "100%" }}>
           <PageContent triggerSlash={triggerSlash} isSliced={slashPhase !== 'idle'} />
@@ -291,7 +330,7 @@ export default function Page() {
         )}
       </div>
 
-      {/* 💥 [가볍고 날렵한 검기 애니메이션] */}
+      {/* 💥 [가볍고 날렵한 검기 애니메이션 유지][cite: 9] */}
       {slashPhase === 'slashing' && slashRect && (
         <>
           <style>{`

@@ -67,7 +67,7 @@ interface CanvasItem {
 }
 
 const CANVAS_ITEMS: CanvasItem[] = [
-  { id: "elevator", type: "image", src: "/images/elevator.jpg", top: "0px", left: "136px", width: "1135px", height: "2857px", rotate: "0deg", zIndex: 1 },
+  { id: "elevator copy", type: "image", src: "/images/elevator copy.jpg", top: "0px", left: "136px", width: "1135px", height: "2857px", rotate: "0deg", zIndex: 1 },
   { id: "top box", type: "image", src: "/images/top box.png", top: "115px", left: "371px", width: "730px", height: "240px", rotate: "0deg", zIndex: 2 },
   { id: "circle foXXy red", type: "image", src: "/images/circle foXXy red.png", top: "263px", left: "1015px", width: "110px", rotate: "3deg", zIndex: 3 },
   { id: "13", type: "image", src: "/images/paint/13.png", top: "206px", left: "528px", width: "145px", rotate: "0deg", zIndex: 3 },

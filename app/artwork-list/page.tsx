@@ -1,20 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link"; // 💡 페이지 이동을 위한 Link 컴포넌트 추가
+import Link from "next/link";
 
-// ╔══════════════════════════════════════════════════════════════════════╗
-// ║ ⚙️ 내 마음대로 조절하는 디자인 설정                                    ║
-// ╚══════════════════════════════════════════════════════════════════════╝
-// 💡 마우스를 올렸을 때 커지는 크기입니다. (원하는 대로 직접 조절하세요!)
-// 예시) 1.05 = 5% 확대, 1.1 = 10% 확대, 1.02 = 2% 확대
 const HOVER_SCALE = 1.05; 
 
-
-// ══════════════════════════════════════════════════════════════════════
-// Artwork List 페이지
-// 캔버스 크기: 1440 × 3834 px / 배경: 흰색(#FFFFFF)
-// ══════════════════════════════════════════════════════════════════════
+// 💡 캔버스 기준 원본 크기
+const CANVAS_WIDTH = 1440;
+const CANVAS_HEIGHT = 3834;
 
 interface CanvasItem {
   id: string;
@@ -26,7 +19,7 @@ interface CanvasItem {
   height?: string;
   rotate?: string;
   zIndex?: number;
-  href?: string; // 💡 여기에 href 속성을 추가합니다!
+  href?: string;
 }
 
 const CANVAS_ITEMS: CanvasItem[] = [
@@ -368,37 +361,48 @@ export default function ArtworkListPage() {
         minHeight:       "100vh",
         display:         "flex",
         justifyContent:  "center",
+        alignItems:      "flex-start", // 💡 Header 바로 밑에 여백 없이 밀착
+        position:        "relative",
       }}
     >
-      {/* 1440 × 3834 고정 캔버스 */}
+      {/* 🎨 반응형 비율 캔버스 (1440 × 3834) */}
       <div
         style={{
           position:        "relative",
-          width:           "1440px",
-          height:          "3834px",
+          width:           "100%",
+          maxWidth:        `${CANVAS_WIDTH}px`,
+          aspectRatio:     `${CANVAS_WIDTH} / ${CANVAS_HEIGHT}`,
           backgroundColor: "#ffffff",
-          flexShrink:      0,
-          overflow:        "visible",
+          overflow:        "hidden",
         }}
       >
-        {/* ⬜ Artwork List 메인 컨테이너 박스 */}
+        {/* ⬜ Artwork List 메인 컨테이너 박스 (비율 계산 반영) */}
         <div
           style={{
             position: "absolute",
-            top: "110px",
-            left: "212px",
-            width: "1016px",
-            height: "3589px",
+            top: `${(110 / CANVAS_HEIGHT) * 100}%`,
+            left: `${(212 / CANVAS_WIDTH) * 100}%`,
+            width: `${(1016 / CANVAS_WIDTH) * 100}%`,
+            height: `${(3589 / CANVAS_HEIGHT) * 100}%`,
             backgroundColor: "#FFFFFF",
             border: "4px solid #000000",
             zIndex: 1,
             boxSizing: "border-box",
           }}
-        >
-        </div>
+        />
 
         {CANVAS_ITEMS.map((item) => {
-          // 💡 [수정 부분] 배경, 로고 외에도 두 요소를 제외하여 순수 아트워크 목록에서 빠지게 만듭니다.
+          // 💡 px 값을 숫자로 추출하여 퍼센트(%) 비율로 계산
+          const topNum = parseFloat(item.top);
+          const leftNum = parseFloat(item.left);
+          const widthNum = parseFloat(item.width);
+          const heightNum = item.height ? parseFloat(item.height) : undefined;
+
+          const topPercent = `${(topNum / CANVAS_HEIGHT) * 100}%`;
+          const leftPercent = `${(leftNum / CANVAS_WIDTH) * 100}%`;
+          const widthPercent = `${(widthNum / CANVAS_WIDTH) * 100}%`;
+          const heightPercent = heightNum ? `${(heightNum / CANVAS_HEIGHT) * 100}%` : "auto";
+
           const isArtwork = 
             item.id !== "artwork grid" && 
             item.id !== "foXXy red" && 
@@ -408,31 +412,29 @@ export default function ArtworkListPage() {
 
           const isHovered = hoveredId === item.id;
 
-          // 호버 시 설정된 HOVER_SCALE 상수를 반영하여 크기를 조절합니다 (그림자 필터 완전 제거)
           const currentTransform = item.rotate ? `rotate(${item.rotate})` : "";
           const transformStyle = isArtwork && isHovered 
             ? `${currentTransform} scale(${HOVER_SCALE})` 
             : currentTransform;
 
-          // 호버된 아이템이 가장 앞으로 튀어나오도록 zIndex 변경
           const zIndexStyle = isArtwork && isHovered ? 50 : (item.zIndex ?? 0);
 
-          // 공통 스타일 정의
+          // 공통 요소 스타일
           const elementStyle: React.CSSProperties = {
             position: "absolute",
-            top: item.top,
-            left: item.left,
-            width: item.width,
-            height: item.height ?? "auto",
+            top: topPercent,
+            left: leftPercent,
+            width: widthPercent,
+            height: heightPercent,
             transform: transformStyle || undefined,
             zIndex: zIndexStyle,
             display: "block",
             transition: isArtwork ? "transform 0.2s ease-out" : "none",
             cursor: isArtwork ? "pointer" : "default",
+            willChange: isArtwork ? "transform" : "auto", // 💡 GPU 호버 연산 최적화
           };
 
           if (isArtwork) {
-            // 배열에 내가 직접 적어둔 item.href가 있다면 그걸 최우선으로 사용합니다!
             const finalHref = item.href || `/artwork-list/${item.id.replace("artwork ", "")}`;
 
             return (
@@ -450,6 +452,7 @@ export default function ArtworkListPage() {
                     loop
                     muted
                     playsInline
+                    preload="none"
                     style={{ width: "100%", height: "auto", display: "block", objectFit: "cover" }}
                   />
                 ) : (
@@ -457,13 +460,14 @@ export default function ArtworkListPage() {
                   <img
                     src={item.src}
                     alt=""
+                    loading="lazy"   // 💡 비동기 지연 로딩으로 초기 렉 해소
+                    decoding="async" // 💡 이미지 해독 분산 처리
                     style={{ width: "100%", height: "auto", display: "block" }}
                   />
                 )}
               </Link>
             );
           } else {
-            // 배경이나 제목 텍스트, 장식용 요소들은 링크 및 호버 없이 원래대로 렌더링
             return item.type === "video" ? (
               <video
                 key={item.id}
@@ -472,6 +476,7 @@ export default function ArtworkListPage() {
                 loop
                 muted
                 playsInline
+                preload="none"
                 style={elementStyle}
               />
             ) : (
@@ -480,6 +485,8 @@ export default function ArtworkListPage() {
                 key={item.id}
                 src={item.src}
                 alt=""
+                loading="lazy"
+                decoding="async"
                 style={elementStyle}
               />
             );
