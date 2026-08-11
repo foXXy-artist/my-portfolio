@@ -42,17 +42,14 @@ function makePerlin(): (x: number, y: number) => number {
 const CANVAS_W = 1440;
 const CANVAS_H = 2857;
 
-// 💡 [핵심 추가 설정] 페인트가 시작되는 X 좌표 (오른쪽 영역 설정)
-// 전체 너비가 1440입니다. 720으로 설정하면 화면의 정확히 절반(오른쪽)에만 쏟아집니다.
-// 1000으로 설정하면 우측 440px 영역에만 쏟아집니다. 자유롭게 변경하세요!
 const PAINT_START_X = 720; 
 
-const NUM_COLS = 150; // 드립 컬럼 수 (영역이 좁아졌으므로 150으로도 충분히 부드럽습니다)
-const FILL_MS = 7000; // 바닥까지 닿는 기준 시간(ms)
+const NUM_COLS = 150; 
+const FILL_MS = 7000; 
 const BASE_SPD = CANVAS_H / FILL_MS;
 
 // ══════════════════════════════════════════════════════════════════════
-// ③ 타입 및 CANVAS_ITEMS 데이터 (기존 코드 100% 유지)
+// ③ 타입 및 CANVAS_ITEMS 데이터 
 // ══════════════════════════════════════════════════════════════════════
 interface CanvasItem {
   id:      string;
@@ -116,8 +113,7 @@ export default function Page() {
     const drips   = new Float32Array(NUM_COLS);
     const smoothed = new Float32Array(NUM_COLS);
     
-    // 💡 변경점: 전체 너비가 아닌 (전체너비 - 시작점) 만큼의 너비를 컬럼 수로 나눕니다.
-    const colW    = (CANVAS_W - PAINT_START_X) / (NUM_COLS - 1);
+    const colW = (CANVAS_W - PAINT_START_X) / (NUM_COLS - 1);
 
     let startTs  = 0;
     let prevTs   = 0;
@@ -160,16 +156,21 @@ export default function Page() {
           drips[i + 1] * 0.15;
       }
 
-      // 💡 변경점: 폴리곤 마스크의 왼쪽 끝이 0이 아니라 PAINT_START_X에서 시작하도록 변경
+      // 💡 [반응형 처리] px 대신 %로 폴리곤 좌표를 계산하여 해상도에 무관하게 항상 일치하도록 수정
+      const startXPct = ((PAINT_START_X / CANVAS_W) * 100).toFixed(2);
       const pts: string[] = [
-        `${PAINT_START_X}px 0px`,     // 설정한 X위치 (예: 720) 상단
-        `${CANVAS_W}px 0px`,          // 우측 끝 상단
+        `${startXPct}% 0%`, 
+        `100% 0%`,          
       ];
 
       for (let i = NUM_COLS - 1; i >= 0; i--) {
-        const x = (PAINT_START_X + i * colW).toFixed(1);
-        const y = Math.min(smoothed[i], CANVAS_H).toFixed(1);
-        pts.push(`${x}px ${y}px`);
+        const xVal = PAINT_START_X + i * colW;
+        const yVal = Math.min(smoothed[i], CANVAS_H);
+        
+        const xPct = ((xVal / CANVAS_W) * 100).toFixed(2);
+        const yPct = ((yVal / CANVAS_H) * 100).toFixed(2);
+        
+        pts.push(`${xPct}% ${yPct}%`);
       }
 
       const cp = `polygon(${pts.join(",")})`;
@@ -184,8 +185,7 @@ export default function Page() {
         rafRef.current = requestAnimationFrame(step);
       } else if (!finished) {
         finished = true;
-        // 최종적으로 우측 영역 전체를 덮도록 고정
-        const fullCover = `polygon(${PAINT_START_X}px 0px, ${CANVAS_W}px 0px, ${CANVAS_W}px ${CANVAS_H}px, ${PAINT_START_X}px ${CANVAS_H}px)`;
+        const fullCover = `polygon(${startXPct}% 0%, 100% 0%, 100% 100%, ${startXPct}% 100%)`;
         if (overlayRef.current) {
           overlayRef.current.style.clipPath = fullCover;
         }
@@ -232,11 +232,13 @@ export default function Page() {
         position:        "relative",
       }}
     >
+      {/* 💡 [반응형 래퍼] 폭은 100%로 두고, 최대 너비를 제한하며 비율(aspect-ratio)을 유지하게 설정 */}
       <div
         style={{
           position:          "relative",
-          width:             `${CANVAS_W}px`,
-          height:            `${CANVAS_H}px`,
+          width:             "100%",
+          maxWidth:          `${CANVAS_W}px`,
+          aspectRatio:       `${CANVAS_W} / ${CANVAS_H}`, // 핵심: 높이를 비율로 자동 조정
           backgroundImage:   "url('/images/red error copy2.jpg')",
           backgroundSize:    "cover",
           backgroundPosition:"center",
@@ -245,21 +247,35 @@ export default function Page() {
           flexShrink:        0,
         }}
       >
-        {CANVAS_ITEMS.map((item) =>
-          item.type === "video" ? (
+        {CANVAS_ITEMS.map((item) => {
+          // 💡 [반응형 아이템] 기록된 고정 px 값들을 부모 크기 대비 % 로 변환
+          const topPct = (parseFloat(item.top) / CANVAS_H * 100).toFixed(3) + "%";
+          const leftPct = (parseFloat(item.left) / CANVAS_W * 100).toFixed(3) + "%";
+          const widthPct = (parseFloat(item.width) / CANVAS_W * 100).toFixed(3) + "%";
+          
+          let heightPct = "auto";
+          if (item.height && item.height.includes("px")) {
+            heightPct = (parseFloat(item.height) / CANVAS_H * 100).toFixed(3) + "%";
+          }
+
+          const commonStyle = {
+            position:  "absolute" as const,
+            top:       topPct,
+            left:      leftPct,
+            width:     widthPct,
+            height:    heightPct,
+            transform: item.rotate ? `rotate(${item.rotate})` : undefined,
+            zIndex:    item.zIndex ?? 0,
+            display:   "block",
+          };
+
+          return item.type === "video" ? (
             <video
               key={item.id}
               src={item.src}
               autoPlay loop muted playsInline
               style={{
-                position:  "absolute",
-                top:       item.top,
-                left:      item.left,
-                width:     item.width,
-                height:    item.height ?? "auto",
-                transform: item.rotate ? `rotate(${item.rotate})` : undefined,
-                zIndex:    item.zIndex ?? 0,
-                display:   "block",
+                ...commonStyle,
                 objectFit: "cover",
               }}
             />
@@ -269,19 +285,10 @@ export default function Page() {
               key={item.id}
               src={item.src}
               alt=""
-              style={{
-                position:  "absolute",
-                top:       item.top,
-                left:      item.left,
-                width:     item.width,
-                height:    item.height ?? "auto",
-                transform: item.rotate ? `rotate(${item.rotate})` : undefined,
-                zIndex:    item.zIndex ?? 0,
-                display:   "block",
-              }}
+              style={commonStyle}
             />
-          )
-        )}
+          );
+        })}
 
         <div
           ref={overlayRef}
@@ -293,7 +300,7 @@ export default function Page() {
             height:             "100%",
             backdropFilter:     "grayscale(1) brightness(0.88)",
             WebkitBackdropFilter: "grayscale(1) brightness(0.88)",
-            clipPath:           "polygon(0px 0px, 0px 0px)",
+            clipPath:           "polygon(0% 0%, 0% 0%)",
             zIndex:             9999,
             pointerEvents:      "none", 
             willChange:         "clip-path",
