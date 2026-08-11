@@ -41,12 +41,14 @@ function makePerlin(): (x: number, y: number) => number {
 // ══════════════════════════════════════════════════════════════════════
 const CANVAS_W = 1440;
 const CANVAS_H = 2857;
-
 const PAINT_START_X = 720; 
-
 const NUM_COLS = 150; 
 const FILL_MS = 7000; 
 const BASE_SPD = CANVAS_H / FILL_MS;
+
+// 💡 픽셀(px)을 기준 해상도(1440x2857) 대비 퍼센트(%)로 변환하는 헬퍼 함수
+const getPercentX = (pxValue: string) => `${(parseFloat(pxValue) / CANVAS_W) * 100}%`;
+const getPercentY = (pxValue: string) => `${(parseFloat(pxValue) / CANVAS_H) * 100}%`;
 
 // ══════════════════════════════════════════════════════════════════════
 // ③ 타입 및 CANVAS_ITEMS 데이터 
@@ -156,11 +158,10 @@ export default function Page() {
           drips[i + 1] * 0.15;
       }
 
-      // 💡 [반응형 처리] px 대신 %로 폴리곤 좌표를 계산하여 해상도에 무관하게 항상 일치하도록 수정
       const startXPct = ((PAINT_START_X / CANVAS_W) * 100).toFixed(2);
       const pts: string[] = [
-        `${startXPct}% 0%`, 
-        `100% 0%`,          
+        `${startXPct}% 0%`,     
+        `100% 0%`,              
       ];
 
       for (let i = NUM_COLS - 1; i >= 0; i--) {
@@ -225,59 +226,50 @@ export default function Page() {
     <main
       style={{
         backgroundColor: "#FFFFFF",
-        width:           "100%",
-        minHeight:       "100vh",
-        display:         "flex",
-        justifyContent:  "center",
-        position:        "relative",
+        width: "100%",
+        minHeight: "100vh",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "flex-start", // ⭐️ 상하 요동 방지: 화면이 줄어들 때 항상 상단 기준으로 스크롤 되도록 설정
+        position: "relative",
       }}
     >
-      {/* 💡 [반응형 래퍼] 폭은 100%로 두고, 최대 너비를 제한하며 비율(aspect-ratio)을 유지하게 설정 */}
       <div
         style={{
-          position:          "relative",
-          width:             "100%",
-          maxWidth:          `${CANVAS_W}px`,
-          aspectRatio:       `${CANVAS_W} / ${CANVAS_H}`, // 핵심: 높이를 비율로 자동 조정
-          backgroundImage:   "url('/images/red error copy2.jpg')",
-          backgroundSize:    "cover",
-          backgroundPosition:"center",
-          backgroundRepeat:  "no-repeat",
-          overflow:          "hidden",
-          flexShrink:        0,
+          position: "relative",
+          width: "100%",           
+          maxWidth: `${CANVAS_W}px`,      
+          aspectRatio: `${CANVAS_W} / ${CANVAS_H}`, // 원본 비율 유지
+          backgroundImage: "url('/images/red error copy2.jpg')",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+          overflow: "hidden",
         }}
       >
         {CANVAS_ITEMS.map((item) => {
-          // 💡 [반응형 아이템] 기록된 고정 px 값들을 부모 크기 대비 % 로 변환
-          const topPct = (parseFloat(item.top) / CANVAS_H * 100).toFixed(3) + "%";
-          const leftPct = (parseFloat(item.left) / CANVAS_W * 100).toFixed(3) + "%";
-          const widthPct = (parseFloat(item.width) / CANVAS_W * 100).toFixed(3) + "%";
-          
-          let heightPct = "auto";
-          if (item.height && item.height.includes("px")) {
-            heightPct = (parseFloat(item.height) / CANVAS_H * 100).toFixed(3) + "%";
-          }
-
-          const commonStyle = {
-            position:  "absolute" as const,
-            top:       topPct,
-            left:      leftPct,
-            width:     widthPct,
-            height:    heightPct,
+          // 💡 boxbox 예시와 동일한 반응형 스타일 계산 적용
+          const responsiveStyle: React.CSSProperties = {
+            position: "absolute",
+            top: getPercentY(item.top),
+            left: getPercentX(item.left),
+            width: getPercentX(item.width),
+            height: item.height ? getPercentY(item.height) : "auto", 
             transform: item.rotate ? `rotate(${item.rotate})` : undefined,
-            zIndex:    item.zIndex ?? 0,
-            display:   "block",
+            zIndex: item.zIndex ?? 0,
+            display: "block",
+            objectFit: "cover",
           };
 
           return item.type === "video" ? (
             <video
               key={item.id}
               src={item.src}
-              autoPlay loop muted playsInline
-              style={{
-                ...commonStyle,
-                objectFit: "cover",
-              }}
+              autoPlay
+              loop
+              muted
+              playsInline
+              style={responsiveStyle}
             />
           ) : (
             // eslint-disable-next-line @next/next/no-img-element
@@ -285,7 +277,7 @@ export default function Page() {
               key={item.id}
               src={item.src}
               alt=""
-              style={commonStyle}
+              style={responsiveStyle}
             />
           );
         })}
@@ -293,17 +285,17 @@ export default function Page() {
         <div
           ref={overlayRef}
           style={{
-            position:           "absolute",
-            top:                0,
-            left:               0,
-            width:              "100%",
-            height:             "100%",
-            backdropFilter:     "grayscale(1) brightness(0.88)",
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            backdropFilter: "grayscale(1) brightness(0.88)",
             WebkitBackdropFilter: "grayscale(1) brightness(0.88)",
-            clipPath:           "polygon(0% 0%, 0% 0%)",
-            zIndex:             9999,
-            pointerEvents:      "none", 
-            willChange:         "clip-path",
+            clipPath: "polygon(0% 0%, 0% 0%)",
+            zIndex: 9999,
+            pointerEvents: "none", 
+            willChange: "clip-path",
           }}
         />
       </div>
