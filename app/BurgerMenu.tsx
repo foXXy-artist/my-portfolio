@@ -4,8 +4,11 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import OverlayModal from "./OverlayModal";
 
+// 💡 [크기 조절 설정] - 원하는 수치로 직관적으로 수정하세요!
+const MOBILE_SCALE = 1.5;  // 📱 모바일(768px 이하) 크기 (0.85 ~ 1.0 추천)
+const DESKTOP_BASE  = 1440; // 💻 PC 기준 해상도
+
 const CONFIG = {
-  // ... (💡 기존에 작성하신 원본 CONFIG 내용은 단 하나도 수정하지 않고 그대로 둡니다!)
   images: {
     circle:  "/images/circle.png",
     topBun:  "/images/top-bun.png",
@@ -100,12 +103,26 @@ export default function BurgerMenu() {
   const [activeOverlay, setActiveOverlay] = useState<OverlayId>(null);
   const [hoveredLayer,  setHoveredLayer]  = useState<LayerKey | string | null>(null);
   
-  // 💡 상태 추가: 전체 메뉴 스케일 비율
   const [scaleRatio, setScaleRatio] = useState(1);
 
   useEffect(() => {
-    // 💡 화면이 1440px보다 작아질 때 스케일다운 (좌측 상단에 찰싹 붙어서 그대로 작아짐)
-    const handleResize = () => setScaleRatio(Math.min(1, window.innerWidth / 1440));
+    const handleResize = () => {
+      const width = window.innerWidth;
+      
+      // 📱 화면 너비가 768px 이하(모바일)일 경우 지정한 MOBILE_SCALE 적용
+      if (width <= 768) {
+        setScaleRatio(MOBILE_SCALE);
+      } 
+      // 💻 태블릿/작은 PC 화면에서는 해상도 비율대로 자연스럽게 조절
+      else if (width < DESKTOP_BASE) {
+        setScaleRatio(width / DESKTOP_BASE);
+      } 
+      // 🖥️ 1440px 이상 대형 화면에서는 원본 100% 유지
+      else {
+        setScaleRatio(1);
+      }
+    };
+
     handleResize(); 
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
@@ -161,9 +178,8 @@ export default function BurgerMenu() {
           position: "fixed", top: container.top, left: container.left,
           width: container.width, height: container.height, zIndex: container.zIndex,
           pointerEvents: "none",
-          // 💡 핵심 수정: 최상위 컨테이너에 scaleRatio를 적용하여 폰트나 디테일 파괴 없이 원본 비율 그대로 줌아웃시킵니다.
           transform: `scale(${scaleRatio})`,
-          transformOrigin: "top left" // 👈 화면 좌측 상단을 기준으로 예쁘게 축소되게 만듭니다.
+          transformOrigin: "top left"
         }}
       >
         <div
@@ -176,6 +192,8 @@ export default function BurgerMenu() {
           }}
           onMouseEnter={() => setIsMenuOpen(true)}
           onMouseLeave={() => { setIsMenuOpen(false); setHoveredLayer(null); }}
+          // 💡 터치 기기(모바일)에서도 터치로 열고 닫을 수 있도록 클릭 이벤트 지원
+          onClick={() => setIsMenuOpen((prev) => !prev)}
         >
           <img src={images.circle} alt="" style={circleStyle} />
 
@@ -184,6 +202,7 @@ export default function BurgerMenu() {
               key={label.id} href={label.href} style={labelStyle(label)}
               onMouseEnter={() => setHoveredLayer(label.id)}
               onMouseLeave={() => setHoveredLayer(null)}
+              onClick={(e) => e.stopPropagation()} // 링크 클릭 시 메뉴 닫힘 방지
             >
               {label.src ? (
                 <img src={label.src} alt={label.id} style={{ width: "100%", height: "100%", objectFit: "contain" }} />
