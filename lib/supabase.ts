@@ -21,9 +21,16 @@
 //     status text default '입금대기'
 //   );
 // ════════════════════════════════════════════════
-import { createClient } from "@supabase/supabase-js";
+import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl  = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey  = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+// .env.local에 저장한 환경 변수를 불러옵니다.
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string;
 
-export const supabase = createClient(supabaseUrl, supabaseKey);
+// 만약 환경 변수가 제대로 안 불러와지면 터미널에 에러를 띄웁니다.
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.error("🚨 Supabase 환경 변수가 누락되었습니다. .env.local 파일을 확인하세요.");
+}
+
+// Supabase 클라이언트를 생성하여 내보냅니다.
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
