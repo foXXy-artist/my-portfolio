@@ -86,7 +86,7 @@ const CANVAS_ITEMS: CanvasItem[] = [
   { id: "can pour", type: "image", src: "/images/paint/can pour.png", top: "323px", left: "161px", width: "66px", rotate: "-36deg", zIndex: 4 },
   { id: "wet cat", type: "image", src: "/images/paint/wet cat.jpeg", top: "435px", left: "89px", width: "93px", rotate: "-10deg", zIndex: 4 },
   { id: "wet cat2", type: "image", src: "/images/paint/wet cat2.jpeg", top: "399px", left: "157px", width: "65px", rotate: "-2deg", zIndex: 5 },
-  { id: "detail", type: "image", src: "/images/paint/detail.png", top: "834px", left: "208px", width: "986px", rotate: "0deg", zIndex: 4 },
+  { id: "detail", type: "image", src: "/images/paint/detail copy.jpg", top: "834px", left: "208px", width: "986px", rotate: "0deg", zIndex: 4 },
   { id: "detail view", type: "image", src: "/images/detail view.png", top: "801px", left: "186px", width: "349px", rotate: "0deg", zIndex: 5 },
   { id: "paint render", type: "image", src: "/images/paint/paint render.png", top: "482px", left: "425px", width: "519px", rotate: "0deg", zIndex: 5 },
   { id: "eye ddiyong", type: "image", src: "/images/paint/eye ddiyong.png", top: "439px", left: "1196px", width: "116px", rotate: "-3deg", zIndex: 6 },

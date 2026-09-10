@@ -78,11 +78,11 @@ const SibaTransition = ({ onEnded, onReady }: { onEnded: () => void; onReady: ()
       position: "fixed", 
       top: "50%", 
       left: "50%", 
-      transform: "translate(-50%, -50%)", // 화면 정중앙에 배치
+      transform: "translate(-50%, -50%)", 
       width: "100vw", 
       height: "100vh", 
-      maxWidth: "1440px",  // 🌟 최대 가로 크기 제한
-      maxHeight: "963px",  // 🌟 최대 세로 크기 제한
+      maxWidth: "1440px",  
+      maxHeight: "963px",  
       pointerEvents: "none",
       zIndex: 16000 
     }}>
@@ -116,9 +116,25 @@ export default function CoverPage({ onDone }: { onDone: () => void }) {
   const [isSkipping, setIsSkipping] = useState(false);
   const [sibaReady, setSibaReady] = useState(false); 
 
+  // 📱 모바일 여부를 판단하는 상태
+  const [isMobile, setIsMobile] = useState(false);
+
   useEffect(() => {
-    startCamera();
-  }, [startCamera]);
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    checkMobile(); 
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  useEffect(() => {
+    // 💻 모바일이 아닐 때(PC일 때)만 카메라 실행
+    if (!isMobile) {
+      startCamera();
+    }
+  }, [startCamera, isMobile]);
 
   useEffect(() => {
     document.body.style.overflow = "hidden";
@@ -199,17 +215,17 @@ export default function CoverPage({ onDone }: { onDone: () => void }) {
         background: "transparent"
       }}
     >
-      {/* 1. 가짜 페이지 노출 (🌟 최대 크기 제한 & 반응형) */}
+      {/* 1. 가짜 페이지 노출 */}
       {(!isSkipping || !sibaReady) && (
         <div style={{
           position: "fixed", 
           top: "50%", 
           left: "50%", 
-          transform: "translate(-50%, -50%)", // 화면 정중앙 배치
+          transform: "translate(-50%, -50%)", 
           width: "100vw", 
           height: "100vh", 
-          maxWidth: "1440px", // 🌟 최대 크기 제한
-          maxHeight: "963px", // 🌟 최대 크기 제한
+          maxWidth: "1440px", 
+          maxHeight: "963px", 
           pointerEvents: "none",
           zIndex: 14000
         }}>
@@ -221,8 +237,8 @@ export default function CoverPage({ onDone }: { onDone: () => void }) {
         </div>
       )}
 
-      {/* 2. 카메라 피드 */}
-      {(!isSkipping || !sibaReady) && (
+      {/* 🚫 2. 모바일(!isMobile)이 아닐 때만 HandVisualizer 렌더링 */}
+      {(!isSkipping || !sibaReady) && !isMobile && (
         <HandVisualizer 
           videoRef={videoRef} 
           landmarks={handState.landmarks} 

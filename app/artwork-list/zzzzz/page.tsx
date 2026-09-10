@@ -222,7 +222,7 @@ const CANVAS_ITEMS: CanvasItem[] = [
   {
     id: "detail",
     type: "image",
-    src: "/images/zzzzz/detail.png",
+    src: "/images/zzzzz/detail copy.jpg",
     top: "834px",
     left: "208px",
     width: "986px",

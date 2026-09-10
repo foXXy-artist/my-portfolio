@@ -361,11 +361,10 @@ export default function ArtworkListPage() {
         minHeight:       "100vh",
         display:         "flex",
         justifyContent:  "center",
-        alignItems:      "flex-start", // 💡 Header 바로 밑에 여백 없이 밀착
+        alignItems:      "flex-start",
         position:        "relative",
       }}
     >
-      {/* 🎨 반응형 비율 캔버스 (1440 × 3834) */}
       <div
         style={{
           position:        "relative",
@@ -376,7 +375,6 @@ export default function ArtworkListPage() {
           overflow:        "hidden",
         }}
       >
-        {/* ⬜ Artwork List 메인 컨테이너 박스 (비율 계산 반영) */}
         <div
           style={{
             position: "absolute",
@@ -385,14 +383,14 @@ export default function ArtworkListPage() {
             width: `${(1016 / CANVAS_WIDTH) * 100}%`,
             height: `${(3589 / CANVAS_HEIGHT) * 100}%`,
             backgroundColor: "#FFFFFF",
-            border: "4px solid #000000",
+            // 💡 FIX 1: 테두리를 화면 너비에 비례해 유연하게 축소되도록 변경 (최소 1px ~ 최대 4px)
+            border: "clamp(1px, 0.3vw, 4px) solid #000000",
             zIndex: 1,
             boxSizing: "border-box",
           }}
         />
 
         {CANVAS_ITEMS.map((item) => {
-          // 💡 px 값을 숫자로 추출하여 퍼센트(%) 비율로 계산
           const topNum = parseFloat(item.top);
           const leftNum = parseFloat(item.left);
           const widthNum = parseFloat(item.width);
@@ -410,6 +408,10 @@ export default function ArtworkListPage() {
             item.id !== "Debut edition doodle" &&
             item.id !== "under bar";
 
+          // 💡 FIX 2: 페이지 상단에 위치한 핵심 구조 이미지들은 우선 로딩(Eager)하여 렌더링 속도 대폭 개선
+          const isTopElement = topNum < 1500;
+          const isEager = item.id === "artwork grid" || isTopElement;
+
           const isHovered = hoveredId === item.id;
 
           const currentTransform = item.rotate ? `rotate(${item.rotate})` : "";
@@ -419,7 +421,6 @@ export default function ArtworkListPage() {
 
           const zIndexStyle = isArtwork && isHovered ? 50 : (item.zIndex ?? 0);
 
-          // 공통 요소 스타일
           const elementStyle: React.CSSProperties = {
             position: "absolute",
             top: topPercent,
@@ -431,7 +432,7 @@ export default function ArtworkListPage() {
             display: "block",
             transition: isArtwork ? "transform 0.2s ease-out" : "none",
             cursor: isArtwork ? "pointer" : "default",
-            willChange: isArtwork ? "transform" : "auto", // 💡 GPU 호버 연산 최적화
+            willChange: isArtwork ? "transform" : "auto",
           };
 
           if (isArtwork) {
@@ -460,8 +461,9 @@ export default function ArtworkListPage() {
                   <img
                     src={item.src}
                     alt=""
-                    loading="lazy"   // 💡 비동기 지연 로딩으로 초기 렉 해소
-                    decoding="async" // 💡 이미지 해독 분산 처리
+                    loading={isEager ? "eager" : "lazy"} // 💡 최적화
+                    fetchPriority={isEager ? "high" : "auto"} // 💡 브라우저에 최우선 로딩 지시
+                    decoding="async"
                     style={{ width: "100%", height: "auto", display: "block" }}
                   />
                 )}
@@ -485,7 +487,8 @@ export default function ArtworkListPage() {
                 key={item.id}
                 src={item.src}
                 alt=""
-                loading="lazy"
+                loading={isEager ? "eager" : "lazy"} // 💡 최적화
+                fetchPriority={isEager ? "high" : "auto"} // 💡 최적화
                 decoding="async"
                 style={elementStyle}
               />
